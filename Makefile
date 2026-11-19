@@ -1,4 +1,4 @@
-.PHONY: help install install-all test lint format run-backend run-frontend docker-build docker-up docker-down clean
+.PHONY: help install install-all test lint format index validate-index run-backend run-frontend docker-build docker-up docker-down clean
 
 help:
 	@echo "RepoGuard Development Commands:"
@@ -12,6 +12,8 @@ help:
 	@echo "  make docker-build    Build Docker containers"
 	@echo "  make docker-up       Start Docker Compose services"
 	@echo "  make docker-down     Stop Docker Compose services"
+	@echo "  make index           Fetch pinned repos (configs/repos.yaml) and build their indexes"
+	@echo "  make validate-index  Cross-check every built index against its source"
 	@echo "  make clean           Clean cache and temporary files"
 
 install:
@@ -29,6 +31,14 @@ lint:
 format:
 	ruff format src/ tests/ scripts/
 	ruff check --fix src/ tests/ scripts/
+
+index:
+	python scripts/fetch_repos.py --index
+
+validate-index:
+	@for d in data/indexes/*/; do n=$$(basename $$d); \
+		python scripts/validate_index.py --repo data/repos/$$n --index $$d --report reports/index_validation/$$n.json || exit 1; \
+	done
 
 run-backend:
 	uvicorn repoguard.api.main:app --host 0.0.0.0 --port 8000 --reload

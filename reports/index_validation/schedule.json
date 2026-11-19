@@ -1,0 +1,14 @@
+{
+  "repository": "schedule",
+  "commit": "82a43db1b938d8fdf60103bd41f329e06c8d3651",
+  "index_errors": [],
+  "stats": {
+    "definitions_checked": 170,
+    "ranges_checked": 170,
+    "parameters_checked": 195,
+    "edges_checked": 1065,
+    "passages_checked": 172
+  },
+  "failures": {},
+  "passed": true
+}

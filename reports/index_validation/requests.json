@@ -1,0 +1,14 @@
+{
+  "repository": "requests",
+  "commit": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+  "index_errors": [],
+  "stats": {
+    "definitions_checked": 807,
+    "ranges_checked": 807,
+    "parameters_checked": 1322,
+    "edges_checked": 2687,
+    "passages_checked": 840
+  },
+  "failures": {},
+  "passed": true
+}

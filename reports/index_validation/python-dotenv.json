@@ -1,0 +1,14 @@
+{
+  "repository": "python-dotenv",
+  "commit": "4fbc6ff07215367ece731006855e732d1405992c",
+  "index_errors": [],
+  "stats": {
+    "definitions_checked": 206,
+    "ranges_checked": 206,
+    "parameters_checked": 359,
+    "edges_checked": 1064,
+    "passages_checked": 246
+  },
+  "failures": {},
+  "passed": true
+}

@@ -1,0 +1,14 @@
+{
+  "repository": "python-tabulate",
+  "commit": "268615a5c27dc40e5c22454c07b44d5c50410da0",
+  "index_errors": [],
+  "stats": {
+    "definitions_checked": 472,
+    "ranges_checked": 472,
+    "parameters_checked": 265,
+    "edges_checked": 2283,
+    "passages_checked": 523
+  },
+  "failures": {},
+  "passed": true
+}
