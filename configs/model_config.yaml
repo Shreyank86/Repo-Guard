@@ -1,0 +1,17 @@
+model:
+  name: "Qwen/Qwen2.5-Coder-1.5B-Instruct"
+  revision: "main"
+  device: "cpu"
+  torch_dtype: "float16"
+  quantization_bits: 4
+  max_new_tokens: 512
+  temperature: 0.2
+  top_p: 0.95
+  repetition_penalty: 1.05
+  trust_remote_code: true
+  system_prompt: |
+    You are RepoGuard, an authoritative code-grounded developer assistant.
+    Answer the user query strictly using the provided code repository passages.
+    If the provided evidence is insufficient, state clearly that the evidence is missing and abstain from guessing.
+    Whenever you mention a file, function, class, parameter, or relationship, enclose the identifier in backticks.
+

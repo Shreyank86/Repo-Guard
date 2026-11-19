@@ -1,0 +1,23 @@
+app:
+  name: "RepoGuard"
+  version: "0.1.0"
+  env: "development"
+  debug: true
+  host: "0.0.0.0"
+  port: 8000
+  mock_mode: true
+  cors_origins:
+    - "http://localhost:5173"
+    - "http://127.0.0.1:5173"
+    - "http://localhost:3000"
+
+paths:
+  data_dir: "data"
+  repos_dir: "data/repos"
+  indexes_dir: "data/indexes"
+  experiments_dir: "data/experiments"
+
+logging:
+  level: "INFO"
+  format: "console"
+

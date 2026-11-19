@@ -1,0 +1,24 @@
+rl:
+  algorithm: "DQN"
+  state_dim: 18
+  action_dim: 6
+  max_steps_per_episode: 6
+  gamma: 0.99
+  learning_rate: 0.0005
+  batch_size: 32
+  replay_buffer_capacity: 10000
+  target_update_interval: 100
+  epsilon_start: 1.0
+  epsilon_end: 0.05
+  epsilon_decay: 0.995
+
+rewards:
+  verified_answer: 1.0
+  unverified_answer: -0.5
+  hallucination_penalty: -2.0
+  valid_abstention: 0.6
+  false_abstention: -1.2
+  step_cost: -0.05
+  token_cost_multiplier: 0.0008
+  risk_penalty_weight: 0.5
+

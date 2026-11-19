@@ -1,0 +1,13 @@
+retrieval:
+  embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
+  device: "cpu"
+  faiss_index_type: "IndexFlatIP"
+  normalize_embeddings: true
+  top_k: 5
+  similarity_threshold: 0.35
+  chunk_size_tokens: 350
+  chunk_overlap_tokens: 50
+  passage_strategies:
+    - "ast_nodes"
+    - "sliding_window"
+

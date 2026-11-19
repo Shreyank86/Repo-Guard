@@ -1,0 +1,100 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "repoguard"
+version = "0.1.0"
+description = "Repository-grounded developer assistant with structural verification and risk-conditioned reinforcement learning."
+readme = "README.md"
+requires-python = ">=3.10,<3.12"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "RepoGuard Team", email = "repoguard-dev@example.com" }
+]
+keywords = ["code-intelligence", "llm-grounding", "verification", "reinforcement-learning", "ast", "faiss"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence"
+]
+
+dependencies = [
+    "fastapi>=0.109.0,<0.115.0",
+    "uvicorn[standard]>=0.27.0,<0.31.0",
+    "pydantic>=2.6.0,<2.10.0",
+    "pydantic-settings>=2.2.0,<2.6.0",
+    "pyyaml>=6.0.1,<7.0.0",
+    "httpx>=0.27.0,<0.28.0",
+    "python-multipart>=0.0.9",
+    "numpy>=1.24.0,<2.0.0",
+]
+
+[project.optional-dependencies]
+ml = [
+    "torch>=2.1.0",
+    "transformers>=4.36.0",
+    "sentence-transformers>=2.3.0",
+    "faiss-cpu>=1.7.4",
+    "accelerate>=0.26.0",
+    "mlflow>=2.10.0"
+]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.3.0",
+    "mypy>=1.8.0",
+    "types-pyyaml>=6.0.12"
+]
+all = [
+    "repoguard[ml]",
+    "repoguard[dev]"
+]
+
+[project.scripts]
+repoguard = "repoguard.api.main:start"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "UP",   # pyupgrade
+    "ARG",  # flake8-unused-arguments
+    "SIM",  # flake8-simplify
+]
+ignore = ["B008", "E501"]
+
+[tool.ruff.isort]
+known-first-party = ["repoguard"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --strict-markers"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
