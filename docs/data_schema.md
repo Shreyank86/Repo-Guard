@@ -13,6 +13,8 @@ All three team members must work against the agreed Pydantic models defined in `
 - **`ClassMetadata`**: Subclass of `SymbolMetadata`. Contains base classes, method names, and class variable names.
 - **`CallEdge`**: Directed invocation edge: `(caller_file, caller_symbol) -> callee_name` at `line_number`.
 
+> On-disk index format, field-by-field meanings, real examples and verifier lookup recipes: see [`index_schema.md`](index_schema.md).
+
 ### 1.2 Retrieval & Evidence
 - **`Passage`**: Bounded text excerpt from a file with `passage_id`, `file_path`, `start_line`, `end_line`, and `content`.
 - **`Evidence`**: Search result passage returned to the agent with a normalized `similarity_score` (0.0 to 1.0) and associated symbol.

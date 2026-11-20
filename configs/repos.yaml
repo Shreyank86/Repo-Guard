@@ -1,0 +1,31 @@
+# Pinned repository snapshots (Member 1 owns this list).
+# Fetch with:  python scripts/fetch_repos.py            (all)
+#              python scripts/fetch_repos.py schedule   (one)
+# Commits were pinned on 2026-11-20 from each repository's default branch.
+# Licences were detected from the LICENSE file and checked by hand.
+repositories:
+  - name: schedule
+    url: https://github.com/dbader/schedule
+    commit: 82a43db1b938d8fdf60103bd41f329e06c8d3651
+    licence: MIT
+    role: primary          # Phase 1 development / baseline repository
+  - name: python-dotenv
+    url: https://github.com/theskumar/python-dotenv
+    commit: 4fbc6ff07215367ece731006855e732d1405992c
+    licence: BSD-3-Clause
+    role: train
+  - name: cachetools
+    url: https://github.com/tkem/cachetools
+    commit: c5de5137153b301933922e47bc70b598970e0627
+    licence: MIT
+    role: train
+  - name: python-tabulate
+    url: https://github.com/astanin/python-tabulate
+    commit: 268615a5c27dc40e5c22454c07b44d5c50410da0
+    licence: MIT
+    role: train
+  - name: requests
+    url: https://github.com/psf/requests
+    commit: 3c7baaa05ab4aa49cc819ce3a819d260de19c157
+    licence: Apache-2.0
+    role: held_out         # generalisation test only; do not tune on it

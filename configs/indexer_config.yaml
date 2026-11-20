@@ -1,0 +1,20 @@
+# Indexer configuration (Member 1). Passed to build_index() via scripts/build_index.py --config.
+# Every key is optional; omitted keys use the defaults in src/repoguard/repository/indexer.py.
+indexer:
+  exclude_dirs: []            # added to built-in exclusions (.git, .venv, venv, build, dist, __pycache__, ...)
+  exclude_globs: []           # fnmatch patterns on repo-relative paths, e.g. ["docs/*", "*/migrations/*"]
+  replace_default_excludes: false
+  include_files: null         # explicit file list instead of scanning (missing files are reported)
+  source_roots: auto          # "auto" strips src/ in src-layout repos; or a list such as ["src", "lib"]
+  passages:
+    max_lines: 80
+    overlap_lines: 10
+    include_module_passages: true
+    include_class_passages: true
+  embeddings:
+    enabled: true
+    backend: auto             # auto | sentence-transformers | hashing
+    model: sentence-transformers/all-MiniLM-L6-v2
+    device: cpu
+    batch_size: 32
+    hashing_dim: 512
