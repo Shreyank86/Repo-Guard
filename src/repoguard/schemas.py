@@ -257,3 +257,61 @@ class IndexArtifacts(_Model):
     def callees_of(self, caller: str) -> list[CallEdge]:
         """Edges whose caller short name or qualified name equals ``caller``."""
         return [e for e in self.call_edges if caller in (e.caller_name, e.caller)]
+
+
+# =============================================================================
+# 3. LLM, Baselines & Benchmark Datasets (owner: Member 3)
+# =============================================================================
+
+class GenerationResult(_Model):
+    """Result of running inference with the frozen code LLM."""
+
+    text: str
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+    latency_ms: float = 0.0
+    peak_vram_mb: float = 0.0
+    finish_reason: str = "stop"
+    is_mock: bool = False
+    model_name: str = ""
+
+
+class BaselineType(str, Enum):
+    ALWAYS_ANSWER = "always_answer"
+    ALWAYS_EVIDENCE = "always_evidence"
+    THRESHOLD_GATE = "threshold_gate"
+
+
+class BenchmarkQuestion(_Model):
+    """A repository-grounded evaluation question with ground truth annotations."""
+
+    question_id: str
+    repository: str
+    commit: str
+    question_type: str
+    question: str
+    expected_action: Literal["answer", "answer_with_evidence", "abstain"]
+    is_trap: bool
+    ground_truth_answer: str
+    target_symbol: str | None = None
+    target_file: str | None = None
+    relevant_lines: list[int] = Field(default_factory=list)
+
+
+class BaselineRunOutput(_Model):
+    """Recorded trace of executing a baseline against a single question."""
+
+    question_id: str
+    baseline: BaselineType
+    model_name: str
+    question: str
+    answer: str
+    abstained: bool
+    evidence_ids: list[str] = Field(default_factory=list)
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+    latency_ms: float = 0.0
+    is_mock: bool = False
+

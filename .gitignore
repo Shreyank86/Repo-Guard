@@ -67,10 +67,19 @@ mlruns/
 *.onnx
 checkpoints/
 
+# Hugging Face model cache
+*.safetensors
+*.msgpack
+
 # OS / Editor
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
 *.swp
+*~
 
+# Scratch / temporary files
+scratch/
+*.tmp
+*.bak
