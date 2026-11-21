@@ -1,0 +1,4 @@
+Baseline,Model,Coverage (%),Hallucination Rate (%),Accuracy on Answered (%),Correct Abstention (%),Over-refusal (%),Mean Tokens / Query,Tokens / Correct Answer,Median Latency (ms)
+always_answer,Qwen/Qwen2.5-Coder-3B-Instruct,100.0,50.0,50.0,0.0,0.0,181.8,363.6,8108.9
+always_evidence,Qwen/Qwen2.5-Coder-3B-Instruct,100.0,50.0,50.0,0.0,0.0,586.0,1172.0,8228.0
+threshold_gate,Qwen/Qwen2.5-Coder-3B-Instruct,13.0,0.0,100.0,100.0,74.0,67.8,521.9,5.0

@@ -28,3 +28,26 @@ class IndexNotFoundError(RepoGuardError):
 
 class EmbeddingBackendError(RepoGuardError):
     """The requested embedding / vector-search backend is unavailable."""
+
+
+# --- Verification (Member 2) ------------------------------------------------
+
+
+class VerificationError(RepoGuardError):
+    """Verification against the repository index failed."""
+
+
+# --- LLM, baselines and RL (Member 3) ---------------------------------------
+
+
+class ModelInferenceError(RepoGuardError):
+    """LLM model loading, tokenization or generation failed."""
+
+
+class BaselineError(RepoGuardError):
+    """Baseline execution or evaluation failed."""
+
+
+class AgentError(RepoGuardError):
+    """RL environment transition or policy execution failed."""
+
