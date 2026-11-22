@@ -7,8 +7,8 @@ from repoguard.verification.models import Claim, ClaimType
 _IDENTIFIER = r"[A-Za-z_][\w]*(?:\.[A-Za-z_][\w]*)*"
 _PATH = r"(?:[\w.-]+/)*[\w-][\w.-]*\.[A-Za-z0-9]+"
 _PARAMETER = r"\*{0,2}[A-Za-z_]\w*"
-_ROLE = r"(?:module-level\s+|async\s+)?(?:function|method|class)"
-_START = r"(?:^|(?<=[.!])\s+)[ \t]*(?:the[ \t]+)?"
+_ROLE = r"(?:module-level\s+|async\s+)?(?:function\s+or\s+class|class\s+or\s+function|function|method|class)"
+_START = r"(?:^|(?<=[.!])\s+)[ \t]*(?:[-*•]|\d+[.)])?[ \t]*(?:the[ \t]+)?"
 _END = r"(?=[.!](?:\s|$)|[ \t]*$)"
 _FLAGS = re.IGNORECASE | re.MULTILINE
 

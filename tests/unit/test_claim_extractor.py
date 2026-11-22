@@ -51,3 +51,17 @@ def test_does_not_promote_negations_questions_fences_or_copied_context() -> None
     )
 
     assert extract_claims(prose) == []
+
+
+def test_extracts_markdown_bullet_and_compound_roles() -> None:
+    text = (
+        "- Function `every` is declared in `schedule/__init__.py`.\n"
+        "* Class `Job` is defined in `schedule/__init__.py`.\n"
+        "1. The function or class `run_pending` is defined in `schedule/__init__.py`.\n"
+    )
+    assert extract_claims(text) == [
+        Claim(type=ClaimType.FUNCTION_EXISTS, symbol="every", file="schedule/__init__.py"),
+        Claim(type=ClaimType.CLASS_EXISTS, symbol="Job", file="schedule/__init__.py"),
+        Claim(type=ClaimType.FUNCTION_EXISTS, symbol="run_pending", file="schedule/__init__.py"),
+    ]
+

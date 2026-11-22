@@ -272,9 +272,57 @@ class GenerationResult(_Model):
     total_tokens: int = 0
     latency_ms: float = 0.0
     peak_vram_mb: float = 0.0
+    entropy: float = 0.0
+    min_token_prob: float = 1.0
     finish_reason: str = "stop"
     is_mock: bool = False
     model_name: str = ""
+
+
+class RLAction(str, Enum):
+    """Canonical 6-action space for the RepoGuard RL controller."""
+
+    SEARCH = "search"
+    INSPECT = "inspect"
+    VERIFY = "verify"
+    ANSWER = "answer"
+    ANSWER_WITH_EVIDENCE = "answer_with_evidence"
+    ABSTAIN = "abstain"
+
+
+class StateVector(_Model):
+    """Standard 18-dimensional normalized state vector observation for RepoGuard policy."""
+
+    # Free signals (6)
+    symbol_found: float = 0.0
+    name_similarity: float = 0.0
+    retr_top1: float = 0.0
+    retr_margin: float = 0.0
+    passage_mentions_symbol: float = 0.0
+    stack_match: float = 1.0
+
+    # Self-check probabilities (4)
+    p_exists: float = 0.0
+    p_no_code_needed: float = 0.0
+    p_in_scope: float = 0.0
+    p_missing_details: float = 0.0
+
+    # Generation uncertainty (3)
+    entropy: float = 0.0
+    min_token_prob: float = 0.0
+    sample_consistency: float = 0.0
+
+    # Progress flags (3)
+    did_search: float = 0.0
+    did_inspect: float = 0.0
+    did_verify: float = 0.0
+
+    # Resource budget & Risk slider (2)
+    tokens_spent: float = 0.0
+    risk_lambda: float = 1.0
+
+    def to_tensor(self) -> list[float]:
+        return list(self.model_dump().values())
 
 
 class BaselineType(str, Enum):
