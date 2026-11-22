@@ -21,12 +21,20 @@ logger = logging.getLogger("repoguard.baselines")
 
 ZERO_SHOT_SYSTEM_PROMPT = """You are a code developer assistant answering questions about a Python repository.
 Answer the developer question directly based on your knowledge.
-Enclose any code identifiers (functions, classes, files, parameters) in backticks."""
+Enclose all code identifiers (functions, classes, files, parameters) in backticks.
+When stating structural definitions, use these explicit patterns:
+- The function or class `<name>` is defined in `<file>`.
+- Function `<name>` accepts parameter `<param>`.
+- Function `<caller>` calls `<callee>`."""
 
 EVIDENCE_SYSTEM_PROMPT = """You are a repository-grounded developer assistant.
 Answer the question strictly using the provided code repository passages.
 If the provided code does not contain sufficient information, state that the evidence is missing.
-Enclose any code identifiers (functions, classes, files, parameters) in backticks."""
+Enclose all code identifiers (functions, classes, files, parameters) in backticks.
+When stating structural definitions, use these explicit patterns:
+- The function or class `<name>` is defined in `<file>`.
+- Function `<name>` accepts parameter `<param>`.
+- Function `<caller>` calls `<callee>`."""
 
 
 def build_evidence_context(evidences: list[Any]) -> str:

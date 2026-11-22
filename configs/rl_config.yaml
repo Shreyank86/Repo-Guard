@@ -2,7 +2,7 @@ rl:
   algorithm: "DQN"
   state_dim: 18
   action_dim: 6
-  max_steps_per_episode: 6
+  max_steps_per_episode: 4
   gamma: 0.99
   learning_rate: 0.0005
   batch_size: 32
@@ -13,12 +13,12 @@ rl:
   epsilon_decay: 0.995
 
 rewards:
-  verified_answer: 1.0
-  unverified_answer: -0.5
-  hallucination_penalty: -2.0
-  valid_abstention: 0.6
-  false_abstention: -1.2
-  step_cost: -0.05
-  token_cost_multiplier: 0.0008
-  risk_penalty_weight: 0.5
+  r_correct: 1.0
+  r_abstain: 0.0
+  c_token: 0.2
+  token_budget_ref: 2000
+  c_step: 0.01
+  lambda_min: 0.25
+  lambda_max: 5.0
+  lambda_default: 1.0
 

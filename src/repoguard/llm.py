@@ -50,26 +50,36 @@ class MockLLM:
                 "Based on the repository analysis, this symbol or functionality does not exist in the codebase. "
                 "I must abstain from generating an unsupported answer."
             )
+            entropy = 1.25
+            min_token_prob = 0.12
         elif "load_config" in q_lower:
             text = (
                 "The `load_config` function is defined in `config.py` at line 12. "
                 "It takes parameter `path` and returns a configuration dictionary."
             )
+            entropy = 0.32
+            min_token_prob = 0.89
         elif "scheduler" in q_lower or "every" in q_lower:
             text = (
                 "In `schedule/__init__.py`, the `Scheduler.every` method schedules a new periodic job. "
                 "It takes parameters `self` and `interval` (defaulting to 1) and returns a `Job` instance."
             )
+            entropy = 0.28
+            min_token_prob = 0.92
         elif "job" in q_lower or "do" in q_lower:
             text = (
                 "The `Job.do` method defines the job's target execution function and associated arguments. "
                 "It accepts `job_func` and `*args`, `**kwargs`."
             )
+            entropy = 0.35
+            min_token_prob = 0.86
         else:
             text = (
                 f"Generated response based on repository prompt context. Mentioned symbol `sample_function` "
                 f"defined in repository file `schedule/__init__.py`."
             )
+            entropy = 0.45
+            min_token_prob = 0.78
 
         completion_tokens = max(1, len(text.split()) * 4 // 3)
         latency_ms = (time.perf_counter() - start_time) * 1000.0
@@ -81,6 +91,8 @@ class MockLLM:
             total_tokens=prompt_tokens + completion_tokens,
             latency_ms=round(latency_ms, 2),
             peak_vram_mb=0.0,
+            entropy=entropy,
+            min_token_prob=min_token_prob,
             finish_reason="stop",
             is_mock=True,
             model_name=self.model_name,
@@ -245,10 +257,12 @@ class LLMService:
         temperature: float = 0.2,
         top_p: float = 0.95,
         repetition_penalty: float = 1.05,
+        return_token_stats: bool = False,
         **kwargs: Any,
     ) -> GenerationResult:
         """
         Generate answer from frozen LLM with token counting and latency tracking.
+        When return_token_stats=True, computes sequence entropy and minimum token probability.
         """
         if self.mock_mode:
             return self._mock_engine.generate(
@@ -281,12 +295,33 @@ class LLMService:
                 top_p=top_p if do_sample else None,
                 repetition_penalty=repetition_penalty,
                 pad_token_id=self._tokenizer.eos_token_id,
+                output_scores=return_token_stats,
+                return_dict_in_generate=True,
             )
 
         latency_ms = (time.perf_counter() - start_time) * 1000.0
-        generated_ids = outputs[0][prompt_tokens:]
+        generated_sequence = outputs.sequences[0] if hasattr(outputs, "sequences") else outputs[0]
+        generated_ids = generated_sequence[prompt_tokens:]
         completion_tokens = len(generated_ids)
         output_text = self._tokenizer.decode(generated_ids, skip_special_tokens=True).strip()
+
+        # Calculate sequence entropy and min_token_prob if requested
+        entropy = 0.0
+        min_token_prob = 1.0
+        if return_token_stats and hasattr(outputs, "scores") and outputs.scores:
+            step_entropies = []
+            step_min_probs = []
+            for score in outputs.scores:
+                probs = torch.softmax(score[0], dim=-1)
+                log_probs = torch.log_softmax(score[0], dim=-1)
+                # Shannon entropy: - sum(p * log(p))
+                ent = -(probs * log_probs).sum().item()
+                step_entropies.append(ent)
+                step_min_probs.append(probs.max().item())
+            if step_entropies:
+                entropy = round(float(sum(step_entropies) / len(step_entropies)), 4)
+            if step_min_probs:
+                min_token_prob = round(float(min(step_min_probs)), 4)
 
         peak_vram_mb = 0.0
         if torch.cuda.is_available():
@@ -304,6 +339,8 @@ class LLMService:
             total_tokens=prompt_tokens + completion_tokens,
             latency_ms=round(latency_ms, 2),
             peak_vram_mb=peak_vram_mb,
+            entropy=entropy,
+            min_token_prob=min_token_prob,
             finish_reason="stop",
             is_mock=False,
             model_name=self.model_name,
