@@ -1,0 +1,101 @@
+{
+  "commit": "82a43db1b938d8fdf60103bd41f329e06c8d3651",
+  "cases": [
+    {
+      "id": "job-definition",
+      "claim": {"type": "class_exists", "symbol": "Job", "file": "schedule/__init__.py"},
+      "supported": true,
+      "source_check": "schedule/__init__.py:209 defines Job."
+    },
+    {
+      "id": "wrong-baseline-job-file",
+      "claim": {"type": "class_exists", "symbol": "Job", "file": "job.py"},
+      "supported": false,
+      "source_check": "The pinned tree contains no job.py. The definition is in schedule/__init__.py."
+    },
+    {
+      "id": "job-wrong-indexed-file",
+      "claim": {"type": "class_exists", "symbol": "Job", "file": "test_schedule.py"},
+      "supported": false,
+      "source_check": "test_schedule.py uses Job from schedule and contains no Job class definition."
+    },
+    {
+      "id": "indexed-python-file",
+      "claim": {"type": "file_exists", "file": "test_schedule.py"},
+      "supported": true,
+      "source_check": "The pinned tree includes test_schedule.py."
+    },
+    {
+      "id": "non-python-file",
+      "claim": {"type": "file_exists", "file": "README.rst"},
+      "supported": true,
+      "source_check": "The pinned tree includes README.rst. The index records Python files only."
+    },
+    {
+      "id": "missing-file",
+      "claim": {"type": "file_exists", "file": "scheduler.py"},
+      "supported": false,
+      "source_check": "The pinned tree has no top-level scheduler.py."
+    },
+    {
+      "id": "module-function",
+      "claim": {"type": "function_exists", "symbol": "schedule.run_pending"},
+      "supported": true,
+      "source_check": "schedule/__init__.py:850 defines the module-level run_pending function."
+    },
+    {
+      "id": "near-miss-function",
+      "claim": {"type": "function_exists", "symbol": "schedule.run_pendin"},
+      "supported": false,
+      "source_check": "The module defines run_pending and has no run_pendin definition."
+    },
+    {
+      "id": "known-parameter",
+      "claim": {"type": "parameter_exists", "symbol": "Job.do", "parameter": "job_func"},
+      "supported": true,
+      "source_check": "The signature on schedule/__init__.py:644 declares job_func."
+    },
+    {
+      "id": "invented-parameter",
+      "claim": {"type": "parameter_exists", "symbol": "Job.do", "parameter": "timeout"},
+      "supported": false,
+      "source_check": "The signature declares self, job_func, args, and kwargs. It has no declared timeout parameter."
+    },
+    {
+      "id": "resolved-call",
+      "claim": {"type": "calls", "caller": "schedule.run_pending", "callee": "Scheduler.run_pending"},
+      "supported": true,
+      "source_check": "schedule/__init__.py:854 calls default_scheduler.run_pending()."
+    },
+    {
+      "id": "reversed-call",
+      "claim": {"type": "calls", "caller": "Scheduler.run_pending", "callee": "schedule.run_pending"},
+      "supported": false,
+      "source_check": "Scheduler.run_pending on lines 89-101 contains no call to the module-level wrapper."
+    },
+    {
+      "id": "unresolved-job-method-call",
+      "claim": {"type": "calls", "caller": "Scheduler._run_job", "callee": "Job.run"},
+      "supported": true,
+      "source_check": "schedule/__init__.py:172-173 annotates job as Job and calls job.run(). The static graph leaves this attribute call unresolved."
+    },
+    {
+      "id": "stdlib-import",
+      "claim": {"type": "imports", "file": "schedule/__init__.py", "module": "datetime"},
+      "supported": true,
+      "source_check": "schedule/__init__.py:42 explicitly imports datetime."
+    },
+    {
+      "id": "near-miss-import",
+      "claim": {"type": "imports", "file": "schedule/__init__.py", "module": "datatime"},
+      "supported": false,
+      "source_check": "The import is datetime. The file contains no explicit import of datatime."
+    },
+    {
+      "id": "imported-symbol",
+      "claim": {"type": "imports", "file": "schedule/__init__.py", "module": "collections.abc.Hashable"},
+      "supported": true,
+      "source_check": "schedule/__init__.py:41 imports Hashable from collections.abc."
+    }
+  ]
+}

@@ -1,0 +1,144 @@
+{
+  "schema_version": "1.0",
+  "output_dir": "mock_schedule",
+  "symbols_path": "mock_schedule/symbols.json",
+  "callgraph_path": "mock_schedule/callgraph.json",
+  "passages_path": "mock_schedule/passages.jsonl",
+  "manifest_path": "mock_schedule/manifest.json",
+  "repository": {
+    "repository_id": "mock_schedule",
+    "name": "schedule",
+    "repo_path": "mock_schedule",
+    "source_url": "https://github.com/dbader/schedule",
+    "commit": "82a43db1b938d8fdf60103bd41f329e06c8d3651",
+    "licence": "MIT",
+    "status": "ready",
+    "total_files": 2,
+    "indexed_files": 2,
+    "total_symbols": 6
+  },
+  "files": [
+    {
+      "path": "schedule/__init__.py",
+      "module": "schedule",
+      "is_package": true,
+      "classes": ["schedule.Job"],
+      "functions": [
+        "schedule.Job.do",
+        "schedule.Job.run",
+        "schedule.Scheduler.run_pending",
+        "schedule.Scheduler._run_job",
+        "schedule.run_pending"
+      ],
+      "import_count": 2
+    },
+    {
+      "path": "test_schedule.py",
+      "module": "test_schedule"
+    }
+  ],
+  "symbols": [
+    {
+      "symbol_id": "schedule/__init__.py::schedule.Job",
+      "name": "Job",
+      "qualified_name": "schedule.Job",
+      "type": "class",
+      "file": "schedule/__init__.py",
+      "module": "schedule",
+      "line": 209,
+      "end_line": 830
+    },
+    {
+      "symbol_id": "schedule/__init__.py::schedule.Job.do",
+      "name": "do",
+      "qualified_name": "schedule.Job.do",
+      "type": "method",
+      "file": "schedule/__init__.py",
+      "module": "schedule",
+      "line": 644,
+      "end_line": 664,
+      "parameters": ["self", "job_func", "args", "kwargs"]
+    },
+    {
+      "symbol_id": "schedule/__init__.py::schedule.Job.run",
+      "name": "run",
+      "qualified_name": "schedule.Job.run",
+      "type": "method",
+      "file": "schedule/__init__.py",
+      "module": "schedule",
+      "line": 674,
+      "end_line": 698,
+      "parameters": ["self"]
+    },
+    {
+      "symbol_id": "schedule/__init__.py::schedule.Scheduler.run_pending",
+      "name": "run_pending",
+      "qualified_name": "schedule.Scheduler.run_pending",
+      "type": "method",
+      "file": "schedule/__init__.py",
+      "module": "schedule",
+      "line": 89,
+      "end_line": 101,
+      "parameters": ["self"]
+    },
+    {
+      "symbol_id": "schedule/__init__.py::schedule.Scheduler._run_job",
+      "name": "_run_job",
+      "qualified_name": "schedule.Scheduler._run_job",
+      "type": "method",
+      "file": "schedule/__init__.py",
+      "module": "schedule",
+      "line": 172,
+      "end_line": 175,
+      "parameters": ["self", "job"]
+    },
+    {
+      "symbol_id": "schedule/__init__.py::schedule.run_pending",
+      "name": "run_pending",
+      "qualified_name": "schedule.run_pending",
+      "type": "function",
+      "file": "schedule/__init__.py",
+      "module": "schedule",
+      "line": 850,
+      "end_line": 854
+    }
+  ],
+  "call_edges": [
+    {
+      "caller": "schedule.run_pending",
+      "caller_name": "run_pending",
+      "callee": "run_pending",
+      "callee_expr": "default_scheduler.run_pending",
+      "callee_qualified": "schedule.Scheduler.run_pending",
+      "resolution": "method",
+      "file": "schedule/__init__.py",
+      "line": 854
+    },
+    {
+      "caller": "schedule.Scheduler._run_job",
+      "caller_name": "_run_job",
+      "callee": "run",
+      "callee_expr": "job.run",
+      "resolution": "unresolved",
+      "file": "schedule/__init__.py",
+      "line": 173
+    }
+  ],
+  "imports": [
+    {
+      "file": "schedule/__init__.py",
+      "line": 41,
+      "kind": "from",
+      "module": "collections.abc",
+      "name": "Hashable",
+      "resolved_module": "collections.abc"
+    },
+    {
+      "file": "schedule/__init__.py",
+      "line": 42,
+      "kind": "import",
+      "module": "datetime",
+      "resolved_module": "datetime"
+    }
+  ]
+}
