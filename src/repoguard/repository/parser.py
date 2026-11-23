@@ -77,13 +77,16 @@ def scan_repository(
     exclude_dirs: Iterable[str] = DEFAULT_EXCLUDE_DIRS,
     exclude_globs: Sequence[str] = DEFAULT_EXCLUDE_GLOBS,
     include_files: Sequence[str] | None = None,
+    stats: dict[str, int] | None = None,
+    include_hidden_dirs: bool = False,
 ) -> tuple[list[str], list[IndexIssue]]:
     """Return sorted repository-relative POSIX paths of ``.py`` files plus scan issues.
 
     If ``include_files`` is given only those paths are considered; missing ones are
-    reported as issues. Otherwise the tree is walked recursively without following
-    directory symlinks, skipping excluded directories and any virtualenv
-    (a directory containing ``pyvenv.cfg``).
+    reported as issues. ``stats`` (optional) receives ``unsupported_files``: the number of
+    non-``.py`` files skipped in included directories. Otherwise the tree is walked recursively without following
+    directory symlinks, skipping excluded directories, hidden directories (``.github`` etc.,
+    unless ``include_hidden_dirs``) and any virtualenv (a directory containing ``pyvenv.cfg``).
     """
     exclude = frozenset(exclude_dirs)
     issues: list[IndexIssue] = []
@@ -116,6 +119,8 @@ def scan_repository(
             rel = d if rel_dir == "." else f"{rel_dir}/{d}"
             if _is_excluded(rel, d, exclude, exclude_globs):
                 continue
+            if d.startswith(".") and not include_hidden_dirs:  # .github, .devcontainer, ...
+                continue
             if (current / d / "pyvenv.cfg").exists():
                 continue
             kept.append(d)
@@ -123,6 +128,8 @@ def scan_repository(
 
         for fname in filenames:
             if not fname.endswith(".py"):
+                if stats is not None:
+                    stats["unsupported_files"] = stats.get("unsupported_files", 0) + 1
                 continue
             rel = fname if rel_dir == "." else f"{rel_dir}/{fname}"
             if _is_excluded(rel, fname, exclude, exclude_globs):

@@ -1,9 +1,11 @@
-# Repository Index Schema (v1.0)
+# Repository Index & Evidence Contract (schema v1.1)
 
 **Owner:** Member 1 (Repository Intelligence). **Consumers:** Member 2 (verifier), Member 3 (baseline, RL environment).
 **Pydantic models:** `src/repoguard/schemas.py`, section 1. **Producer:** `build_index()` in `src/repoguard/repository/indexer.py`.
 
-Any change to a field name or meaning bumps `INDEX_SCHEMA_VERSION` and is agreed with the team first. `load_index()` refuses indexes written with a different schema version.
+Any change to a field name or meaning bumps `INDEX_SCHEMA_VERSION` and is agreed with the team first. `load_index()` refuses indexes whose schema version is not in `COMPATIBLE_INDEX_VERSIONS`.
+
+**Changes in v1.1 (Phase 2):** `index_id` and `tool_versions` in every artefact/manifest; non-deterministic build metadata moved to `build_info.json`; `content_sha256` on passages; the evidence contract (§6) with stable evidence ids and provenance; `Retriever` API with filters, diagnostics and `inspect`; staleness checks; hidden directories (`.github/`) skipped by default. **v1.0 indexes must be rebuilt** (`make index`).
 
 ---
 
@@ -14,12 +16,14 @@ data/indexes/<repo>/
   symbols.json        files, symbols, imports, errors
   callgraph.json      static call edges
   passages.jsonl      retrieval passages (one JSON object per line)
-  manifest.json       provenance, effective config, counts, artefact sha256 hashes
-  passages.faiss      FAISS IndexFlatIP over normalised vectors (or passages.npy without faiss)
-  vector_meta.json    embedding backend/model/dim and the passage-id order of the vectors
+  manifest.json       index_id, provenance, tool versions, effective config, counts, artefact sha256 hashes
+  build_info.json     build timestamp, duration, platform  (the only non-deterministic file)
+  passages.faiss      FAISS IndexFlatIP over normalised vectors   } one of these, chosen by
+  passages.npy        the same vectors as a NumPy matrix          } embeddings.vector_store
+  vector_meta.json    index_id, embedding backend/model/dim and the passage-id order of the vectors
 ```
 
-The last two exist only when embeddings are enabled. Load everything with:
+The vector files exist only when embeddings are enabled. `vector_store: numpy` gives an index that loads on any machine (e.g. Windows where FAISS is blocked); `auto` uses FAISS when importable. Load everything with:
 
 ```python
 from repoguard.repository import load_index
@@ -30,7 +34,9 @@ idx = load_index("data/indexes/schedule")      # -> IndexArtifacts
 
 * Paths are repository-relative POSIX paths (`schedule/__init__.py`), never absolute.
 * Lines are 1-based and inclusive; `col` is the 0-based AST column offset.
-* Records are sorted (files by path; symbols by file, line, column; edges by file, line, column, caller). Re-running on the same commit with the same config gives **byte-identical** files. No timestamps are written.
+* Records are sorted (files by path; symbols by file, line, column; edges by file, line, column, caller). Re-running on the same commit with the same config gives **byte-identical** files; only `build_info.json` (timestamps) differs, and it is excluded from the artefact hashes.
+* **`index_id`** = `<repository_id>@<commit[:12]>-<config hash[:8]>`, e.g. `schedule@82a43db1b938-66f82ca2`. It changes when the snapshot or anything that affects index content (exclusions, source roots, passage/embedding settings, schema/indexer version) changes; provenance overrides (name, URL, licence) do not change it. Every artefact carries it, and `load_index()` rejects a directory whose files come from different builds.
+* Hidden directories (`.github/`, `.devcontainer/` …) are skipped unless `include_hidden_dirs: true`; non-`.py` files are counted in `counts.unsupported_files_skipped`.
 * Module names strip a detected source root: `src/requests/api.py` → `requests.api` (`source_roots` in the manifest config shows what was used).
 
 ---
@@ -178,31 +184,112 @@ Decorators, default values and annotations are attributed to the **enclosing** s
 | `class` | class overview: header, docstring, class attributes and method signatures, with each method body replaced by `...` | the class `symbol_id` |
 | `module` | module overview: docstring, imports, top-level statements, signatures of top-level defs with bodies replaced by `...` | `<file>::<module>` |
 
-Passages longer than `passages.max_lines` (default 80) are split into windows overlapping by `overlap_lines` (default 10); ids get `@1`, `@2`, … and `part`/`total_parts` are set. For `class`/`module` passages the content is elided, so it is **not** a contiguous slice of `start_line..end_line`. `header` is prepended to `content` when embedding (`Passage.embedding_text()`).
+Passages longer than `passages.max_lines` (default 80) are split into windows overlapping by `overlap_lines` (default 10); ids get `@1`, `@2`, … and `part`/`total_parts` are set. For `class`/`module` passages the content is elided, so it is **not** a contiguous slice of `start_line..end_line`. `header` is prepended to `content` when embedding (`Passage.embedding_text()`). `content_sha256` is the sha256 of `content` (UTF-8).
 
 ---
 
 ## 5. `manifest.json`
 
-`repository` (id, name, source URL, commit, licence, status, counts), the full effective `config`, `counts` (files, failures, symbols by type, imports, edges by resolution, passages, errors), `embeddings` (backend, model, dim, vector store, files) and `artefacts` (sha256 of each output file). Use the manifest to state exactly which snapshot and settings produced any reported result.
+`index_id`; `repository` (id, name, source URL, commit, licence, status, counts); `tool_versions` (`repoguard`, `index_schema`, `indexer`, `python`, `parser` = `ast (CPython x.y.z)`, `pydantic`, `numpy`, and with embeddings `embedding_backend`, `embedding_model`, `sentence_transformers`, `faiss`); the full effective `config`; `counts` (files, failures, symbols by type, imports, edges by resolution, passages, errors), `embeddings` (backend, model, dim, vector store, files) and `artefacts` (sha256 of each output file). Use the manifest to state exactly which snapshot and settings produced any reported result.
 
 ---
 
-## 6. Retrieval
+## 6. Retrieval and the evidence contract
+
+Other modules use `Retriever` (or the Phase 1 `search()` wrapper). FAISS/NumPy details are internal.
 
 ```python
-from repoguard.retrieval import search
-evidence = search("how is the next run computed", idx, k=5)   # -> list[Evidence]
+from repoguard.retrieval import Retriever, SearchFilters
+
+r = Retriever.from_dir("data/indexes/schedule", repo_root="data/repos/schedule")   # repo_root optional
+res = r.search("how is the next run computed", k=5,
+               filters=SearchFilters(path_prefix="schedule/", exclude_tests=True), min_score=0.0)
+res.evidence      # list[Evidence], ranked
+res.diagnostics   # RetrievalDiagnostics
+r.get_evidence(evidence_id)            # resolve a stable id back to its passage
+r.inspect("Scheduler")                 # INSPECT / OPEN: full source of a symbol, evidence id or file
+
+from repoguard.retrieval import search   # Phase 1 API, unchanged: list[Evidence]
+search("how is the next run computed", idx, k=5)
 ```
 
-`Evidence`: `evidence_id`, `passage_id`, `file_path`, `start_line`, `end_line`, `snippet` (passage content), `similarity_score` (cosine clipped to [0, 1]), `associated_symbol`, `rank`. Query embeddings use the same backend recorded in `vector_meta.json`. If an index was built without embeddings, `search` builds an in-memory lexical (hashing) index instead.
+### 6.1 `Evidence`
+
+```json
+{"evidence_id": "ev_15849d01508468e3", "passage_id": "schedule/__init__.py::schedule.Scheduler.idle_seconds",
+ "file_path": "schedule/__init__.py", "start_line": 197, "end_line": 206,
+ "snippet": "    @property\n    def idle_seconds(self) -> Optional[float]: ...",
+ "similarity_score": 0.31, "rank_score": 0.61, "associated_symbol": "schedule.Scheduler.idle_seconds",
+ "rank": 1, "passage_type": "method", "part": 1, "total_parts": 1,
+ "content_sha256": "…", "approx_tokens": 90,
+ "index_id": "schedule@82a43db1b938-66f82ca2", "repository_id": "schedule",
+ "commit": "82a43db1b938d8fdf60103bd41f329e06c8d3651",
+ "source_url": "https://github.com/dbader/schedule/blob/82a43db…/schedule/__init__.py#L197-L206"}
+```
+
+| Field | Contract |
+|---|---|
+| `evidence_id` | `ev_` + first 16 hex of sha256(`index_id` \| `passage_id` \| `content_sha256`). **Stable** for the same passage of the same index across runs, reloads and identical rebuilds; different when the index id or content differs |
+| `file_path`, `start_line`, `end_line` | repository-relative POSIX path; 1-based inclusive lines at the pinned commit |
+| `snippet` | the passage content; for function/method passages an exact source slice |
+| `associated_symbol` | qualified symbol (`None` for module overviews) |
+| `similarity_score` | **raw cosine** clipped to [0, 1] (unchanged by boosts; use this for thresholds and RL signals) |
+| `rank_score` | the ordering score: cosine + boosts (§6.3) |
+| `content_sha256`, `approx_tokens` | integrity hash of `snippet`; token estimate = ⌈chars / 4⌉ (model-agnostic) |
+| `index_id`, `repository_id`, `commit`, `source_url` | provenance; `source_url` is a GitHub permalink to the exact lines when the source is on GitHub, else `null` |
+
+### 6.2 `SearchFilters` and `RetrievalDiagnostics`
+
+Filters (all optional, combined with AND, applied before top-k): `path_prefix`, `path_glob` (fnmatch), `passage_types` (`function`/`method`/`class`/`module`), `symbol` (short, qualified or dotted suffix), `exclude_tests` (`test`/`tests` directories, `test_*.py`, `*_test.py`, `conftest.py`).
+
+Diagnostics per search: `query_chars`, `k_requested`, `candidates` (passages after filtering), `returned`, `duplicates_removed` (identical content), `below_min_score`, `empty`, `top1_score` (max cosine), `retrieved_tokens`, `latency_ms`, `backend`, `vector_store`.
+
+### 6.3 Ranking
+
+Search is **exact**: every passage is scored, filtered, de-duplicated by `content_sha256`, then the top-k by `rank_score` are returned (ties: index order), so results are deterministic.
+
+`rank_score = cosine + 0.30 if the passage defines a symbol named in the query, or + 0.10 if it mentions one as an identifier.` Named symbols are detected as in `docs/state_signals.md` §3. Pass `definition_boost=0, mention_boost=0` for pure vector search. The defaults were chosen on the development repositories only; the held-out `requests` results are in `reports/retrieval/`.
+
+### 6.4 `inspect` (for the INSPECT / OPEN action)
+
+`inspect(target, max_lines=200)` takes an evidence id, passage id, symbol id, qualified/short symbol name or an indexed file path:
+
+* function / method → the whole definition, with all passage parts stitched together (no `repo_root` needed)
+* class / module / file → the real source lines; needs `repo_root`. Without it, a class falls back to its overview passage
+* output is capped at `max_lines`; `similarity_score = 0`; `passage_id = inspect:<target>:<start>-<end>`
+
+### 6.5 Errors and robustness
+
+| Situation | Behaviour |
+|---|---|
+| blank query | empty `SearchResult` (`diagnostics.empty = true`) |
+| non-string query, `k` outside 1..200 (or bool/float), `min_score` outside [0, 1] | `InvalidQueryError` (a `ValueError`) |
+| query longer than 4000 characters | truncated; `query_chars` shows the length used |
+| empty repository / no passages | empty results; signals all 0 with `missing_evidence = 1` |
+| `inspect` on unknown target, path outside the index, `../..` | `InvalidQueryError` |
+| file changed or deleted since indexing (`inspect`) | `StaleIndexError` |
+| `vector_meta.json` from another build or reordered ids | `StaleIndexError` on load — never silently wrong evidence |
+| FAISS file but FAISS not importable | `EmbeddingBackendError` telling you to rebuild with `vector_store: numpy` |
+| index files from different builds | `IndexNotFoundError` on `load_index` |
+
+Whole-repository staleness: `check_freshness(idx, repo_path)` (or `scripts/search_index.py --freshness`) re-scans with the index's own config and reports changed / added / removed files and a changed git commit.
+
+### 6.6 Embedding backends
 
 | Backend | When | Notes |
 |---|---|---|
 | `sentence-transformers` | `all-MiniLM-L6-v2`, needs `pip install -e .[ml]` and the model download | the agreed semantic embedder |
 | `hashing` | no ML stack / offline / tests | deterministic signed feature hashing over code-aware tokens; lexical, **not semantic** |
 
-`backend: auto` tries sentence-transformers and falls back to hashing with a warning. Always report the backend in `manifest.json → embeddings` alongside retrieval results.
+`backend: auto` tries sentence-transformers and falls back to hashing with a warning. Always report the backend (`manifest.json → tool_versions.embedding_backend`) alongside retrieval results.
+
+### 6.7 Fixture index for other modules
+
+`tests/fixtures/indexes/indexer_repo/` is a committed, prebuilt index (hashing embeddings, NumPy vectors) of `tests/fixtures/indexer_repo/`. Use it in other modules' tests and mocks instead of building indexes. `test_committed_fixture_index_is_current` fails if it drifts; rebuild it from the repo root with:
+
+```bash
+python -c "from repoguard.repository import build_index; build_index('tests/fixtures/indexer_repo', 'tests/fixtures/indexes/indexer_repo', {'embeddings': {'enabled': True, 'backend': 'hashing', 'vector_store': 'numpy'}})"
+```
 
 ---
 
@@ -226,3 +313,5 @@ evidence = search("how is the next run computed", idx, k=5)   # -> list[Evidence
 * Code that differs by Python version or platform is indexed as written: both branches of an `if sys.version_info …` definition appear (with `#2` ids).
 * Parsing uses the Python running the indexer. Syntax newer than that interpreter appears as a `parse` error.
 * Passage ids are stable for a given commit; editing a file shifts line numbers but symbol-based ids stay the same unless the symbol is renamed or moved.
+* Hidden directories are skipped by default, so CI helpers such as `cachetools/.github/copilot-bench.py` are not indexed.
+* `approx_tokens` is a character-based estimate, not the LLM tokenizer's count; Member 3's adapter measures real tokens.

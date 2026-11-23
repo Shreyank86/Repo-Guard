@@ -4,6 +4,7 @@ indexer:
   exclude_dirs: []            # added to built-in exclusions (.git, .venv, venv, build, dist, __pycache__, ...)
   exclude_globs: []           # fnmatch patterns on repo-relative paths, e.g. ["docs/*", "*/migrations/*"]
   replace_default_excludes: false
+  include_hidden_dirs: false  # skip .github/, .devcontainer/ ... (CI helpers, not library code)
   include_files: null         # explicit file list instead of scanning (missing files are reported)
   source_roots: auto          # "auto" strips src/ in src-layout repos; or a list such as ["src", "lib"]
   passages:
@@ -18,3 +19,4 @@ indexer:
     device: cpu
     batch_size: 32
     hashing_dim: 512
+    vector_store: auto        # auto (faiss if importable) | faiss | numpy (portable, e.g. Windows w/o faiss)

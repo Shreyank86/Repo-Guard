@@ -1,0 +1,770 @@
+{
+  "schema_version": "1.1",
+  "index_id": "indexer-repo@nocommit-8fd2c222",
+  "repository": {
+    "repository_id": "indexer-repo",
+    "name": "indexer_repo",
+    "repo_path": "tests/fixtures/indexer_repo",
+    "source_url": null,
+    "commit": null,
+    "licence": null,
+    "status": "ready",
+    "total_files": 4,
+    "indexed_files": 4,
+    "failed_files": 0,
+    "total_symbols": 17
+  },
+  "files": [
+    {
+      "path": "pkg/__init__.py",
+      "module": "pkg",
+      "is_package": true,
+      "line_count": 5,
+      "size_bytes": 146,
+      "sha256": "16e7a34ac7035738479017a76ec22f9dfe3f3a7fd30f569c40ad2892bc294573",
+      "parse_status": "ok",
+      "functions": [],
+      "classes": [],
+      "import_count": 1
+    },
+    {
+      "path": "pkg/app.py",
+      "module": "pkg.app",
+      "is_package": false,
+      "line_count": 62,
+      "size_bytes": 1098,
+      "sha256": "adb21b033851e15d616f663c107478b672b2551ff8b6693d923a14e22147766c",
+      "parse_status": "ok",
+      "functions": [
+        "pkg.app.BaseService.start",
+        "pkg.app.BaseService.ready",
+        "pkg.app.App.__init__",
+        "pkg.app.App.initialize_app",
+        "pkg.app.App.build",
+        "pkg.app.App.fetch",
+        "pkg.app.App.fetch.inner",
+        "pkg.app.App.restart",
+        "pkg.app.main",
+        "pkg.app.compute",
+        "pkg.app.nested"
+      ],
+      "classes": [
+        "pkg.app.BaseService",
+        "pkg.app.App"
+      ],
+      "import_count": 3
+    },
+    {
+      "path": "pkg/config.py",
+      "module": "pkg.config",
+      "is_package": false,
+      "line_count": 24,
+      "size_bytes": 570,
+      "sha256": "7861801552fcb9371fe0507a411ec0d36687966625d30aac07e09114e45b0c7c",
+      "parse_status": "ok",
+      "functions": [
+        "pkg.config.load_config",
+        "pkg.config.validate",
+        "pkg.config.parse_args"
+      ],
+      "classes": [],
+      "import_count": 2
+    },
+    {
+      "path": "pkg/utils.py",
+      "module": "pkg.utils",
+      "is_package": false,
+      "line_count": 2,
+      "size_bytes": 36,
+      "sha256": "8ac196dba4f434f33820d92ea867ab1f022e2dbf67d1be9301a0beb925500f0e",
+      "parse_status": "ok",
+      "functions": [
+        "pkg.utils.helper"
+      ],
+      "classes": [],
+      "import_count": 0
+    }
+  ],
+  "symbols": [
+    {
+      "symbol_id": "pkg/app.py::pkg.app.BaseService",
+      "name": "BaseService",
+      "qualified_name": "pkg.app.BaseService",
+      "type": "class",
+      "file": "pkg/app.py",
+      "module": "pkg.app",
+      "line": 9,
+      "end_line": 14,
+      "col": 0,
+      "decorator_line": null,
+      "parent": null,
+      "decorators": [],
+      "docstring": null,
+      "bases": [],
+      "methods": [
+        "start",
+        "ready"
+      ],
+      "class_variables": []
+    },
+    {
+      "symbol_id": "pkg/app.py::pkg.app.BaseService.start",
+      "name": "start",
+      "qualified_name": "pkg.app.BaseService.start",
+      "type": "method",
+      "file": "pkg/app.py",
+      "module": "pkg.app",
+      "line": 10,
+      "end_line": 11,
+      "col": 4,
+      "decorator_line": null,
+      "parent": "pkg.app.BaseService",
+      "decorators": [],
+      "docstring": null,
+      "parameters": [
+        "self"
+      ],
+      "parameter_details": [
+        {
+          "name": "self",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null,
+          "has_default": false
+        }
+      ],
+      "return_annotation": null,
+      "is_async": false,
+      "parent_class": "BaseService",
+      "is_nested": false
+    },
+    {
+      "symbol_id": "pkg/app.py::pkg.app.BaseService.ready",
+      "name": "ready",
+      "qualified_name": "pkg.app.BaseService.ready",
+      "type": "method",
+      "file": "pkg/app.py",
+      "module": "pkg.app",
+      "line": 13,
+      "end_line": 14,
+      "col": 4,
+      "decorator_line": null,
+      "parent": "pkg.app.BaseService",
+      "decorators": [],
+      "docstring": null,
+      "parameters": [
+        "self"
+      ],
+      "parameter_details": [
+        {
+          "name": "self",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null,
+          "has_default": false
+        }
+      ],
+      "return_annotation": null,
+      "is_async": false,
+      "parent_class": "BaseService",
+      "is_nested": false
+    },
+    {
+      "symbol_id": "pkg/app.py::pkg.app.App",
+      "name": "App",
+      "qualified_name": "pkg.app.App",
+      "type": "class",
+      "file": "pkg/app.py",
+      "module": "pkg.app",
+      "line": 17,
+      "end_line": 44,
+      "col": 0,
+      "decorator_line": null,
+      "parent": null,
+      "decorators": [],
+      "docstring": "Main application.",
+      "bases": [
+        "BaseService"
+      ],
+      "methods": [
+        "__init__",
+        "initialize_app",
+        "build",
+        "fetch",
+        "restart"
+      ],
+      "class_variables": [
+        "name",
+        "retries"
+      ]
+    },
+    {
+      "symbol_id": "pkg/app.py::pkg.app.App.__init__",
+      "name": "__init__",
+      "qualified_name": "pkg.app.App.__init__",
+      "type": "method",
+      "file": "pkg/app.py",
+      "module": "pkg.app",
+      "line": 23,
+      "end_line": 25,
+      "col": 4,
+      "decorator_line": null,
+      "parent": "pkg.app.App",
+      "decorators": [],
+      "docstring": null,
+      "parameters": [
+        "self",
+        "path"
+      ],
+      "parameter_details": [
+        {
+          "name": "self",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null,
+          "has_default": false
+        },
+        {
+          "name": "path",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null,
+          "has_default": false
+        }
+      ],
+      "return_annotation": null,
+      "is_async": false,
+      "parent_class": "App",
+      "is_nested": false
+    },
+    {
+      "symbol_id": "pkg/app.py::pkg.app.App.initialize_app",
+      "name": "initialize_app",
+      "qualified_name": "pkg.app.App.initialize_app",
+      "type": "method",
+      "file": "pkg/app.py",
+      "module": "pkg.app",
+      "line": 27,
+      "end_line": 31,
+      "col": 4,
+      "decorator_line": null,
+      "parent": "pkg.app.App",
+      "decorators": [],
+      "docstring": null,
+      "parameters": [
+        "self"
+      ],
+      "parameter_details": [
+        {
+          "name": "self",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null,
+          "has_default": false
+        }
+      ],
+      "return_annotation": null,
+      "is_async": false,
+      "parent_class": "App",
+      "is_nested": false
+    },
+    {
+      "symbol_id": "pkg/app.py::pkg.app.App.build",
+      "name": "build",
+      "qualified_name": "pkg.app.App.build",
+      "type": "method",
+      "file": "pkg/app.py",
+      "module": "pkg.app",
+      "line": 34,
+      "end_line": 35,
+      "col": 4,
+      "decorator_line": 33,
+      "parent": "pkg.app.App",
+      "decorators": [
+        "staticmethod"
+      ],
+      "docstring": null,
+      "parameters": [
+        "path"
+      ],
+      "parameter_details": [
+        {
+          "name": "path",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null,
+          "has_default": false
+        }
+      ],
+      "return_annotation": null,
+      "is_async": false,
+      "parent_class": "App",
+      "is_nested": false
+    },
+    {
+      "symbol_id": "pkg/app.py::pkg.app.App.fetch",
+      "name": "fetch",
+      "qualified_name": "pkg.app.App.fetch",
+      "type": "method",
+      "file": "pkg/app.py",
+      "module": "pkg.app",
+      "line": 37,
+      "end_line": 41,
+      "col": 4,
+      "decorator_line": null,
+      "parent": "pkg.app.App",
+      "decorators": [],
+      "docstring": null,
+      "parameters": [
+        "self",
+        "url",
+        "timeout"
+      ],
+      "parameter_details": [
+        {
+          "name": "self",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null,
+          "has_default": false
+        },
+        {
+          "name": "url",
+          "kind": "positional_or_keyword",
+          "annotation": "str",
+          "default": null,
+          "has_default": false
+        },
+        {
+          "name": "timeout",
+          "kind": "positional_or_keyword",
+          "annotation": "float",
+          "default": "1.0",
+          "has_default": true
+        }
+      ],
+      "return_annotation": "bytes",
+      "is_async": true,
+      "parent_class": "App",
+      "is_nested": false
+    },
+    {
+      "symbol_id": "pkg/app.py::pkg.app.App.fetch.inner",
+      "name": "inner",
+      "qualified_name": "pkg.app.App.fetch.inner",
+      "type": "function",
+      "file": "pkg/app.py",
+      "module": "pkg.app",
+      "line": 38,
+      "end_line": 39,
+      "col": 8,
+      "decorator_line": null,
+      "parent": "pkg.app.App.fetch",
+      "decorators": [],
+      "docstring": null,
+      "parameters": [
+        "x"
+      ],
+      "parameter_details": [
+        {
+          "name": "x",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null,
+          "has_default": false
+        }
+      ],
+      "return_annotation": null,
+      "is_async": false,
+      "parent_class": null,
+      "is_nested": true
+    },
+    {
+      "symbol_id": "pkg/app.py::pkg.app.App.restart",
+      "name": "restart",
+      "qualified_name": "pkg.app.App.restart",
+      "type": "method",
+      "file": "pkg/app.py",
+      "module": "pkg.app",
+      "line": 43,
+      "end_line": 44,
+      "col": 4,
+      "decorator_line": null,
+      "parent": "pkg.app.App",
+      "decorators": [],
+      "docstring": null,
+      "parameters": [
+        "self"
+      ],
+      "parameter_details": [
+        {
+          "name": "self",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null,
+          "has_default": false
+        }
+      ],
+      "return_annotation": null,
+      "is_async": false,
+      "parent_class": "App",
+      "is_nested": false
+    },
+    {
+      "symbol_id": "pkg/app.py::pkg.app.main",
+      "name": "main",
+      "qualified_name": "pkg.app.main",
+      "type": "function",
+      "file": "pkg/app.py",
+      "module": "pkg.app",
+      "line": 47,
+      "end_line": 50,
+      "col": 0,
+      "decorator_line": null,
+      "parent": null,
+      "decorators": [],
+      "docstring": null,
+      "parameters": [],
+      "parameter_details": [],
+      "return_annotation": null,
+      "is_async": false,
+      "parent_class": null,
+      "is_nested": false
+    },
+    {
+      "symbol_id": "pkg/app.py::pkg.app.compute",
+      "name": "compute",
+      "qualified_name": "pkg.app.compute",
+      "type": "function",
+      "file": "pkg/app.py",
+      "module": "pkg.app",
+      "line": 53,
+      "end_line": 54,
+      "col": 0,
+      "decorator_line": null,
+      "parent": null,
+      "decorators": [],
+      "docstring": null,
+      "parameters": [
+        "x"
+      ],
+      "parameter_details": [
+        {
+          "name": "x",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null,
+          "has_default": false
+        }
+      ],
+      "return_annotation": null,
+      "is_async": false,
+      "parent_class": null,
+      "is_nested": false
+    },
+    {
+      "symbol_id": "pkg/app.py::pkg.app.nested",
+      "name": "nested",
+      "qualified_name": "pkg.app.nested",
+      "type": "function",
+      "file": "pkg/app.py",
+      "module": "pkg.app",
+      "line": 57,
+      "end_line": 58,
+      "col": 0,
+      "decorator_line": null,
+      "parent": null,
+      "decorators": [],
+      "docstring": null,
+      "parameters": [
+        "y"
+      ],
+      "parameter_details": [
+        {
+          "name": "y",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null,
+          "has_default": false
+        }
+      ],
+      "return_annotation": null,
+      "is_async": false,
+      "parent_class": null,
+      "is_nested": false
+    },
+    {
+      "symbol_id": "pkg/config.py::pkg.config.load_config",
+      "name": "load_config",
+      "qualified_name": "pkg.config.load_config",
+      "type": "function",
+      "file": "pkg/config.py",
+      "module": "pkg.config",
+      "line": 9,
+      "end_line": 14,
+      "col": 0,
+      "decorator_line": null,
+      "parent": null,
+      "decorators": [],
+      "docstring": "Load a JSON config file.",
+      "parameters": [
+        "path",
+        "strict",
+        "encoding",
+        "overrides"
+      ],
+      "parameter_details": [
+        {
+          "name": "path",
+          "kind": "positional_or_keyword",
+          "annotation": "str",
+          "default": null,
+          "has_default": false
+        },
+        {
+          "name": "strict",
+          "kind": "positional_or_keyword",
+          "annotation": "bool",
+          "default": "False",
+          "has_default": true
+        },
+        {
+          "name": "encoding",
+          "kind": "keyword_only",
+          "annotation": "str",
+          "default": "'utf-8'",
+          "has_default": true
+        },
+        {
+          "name": "overrides",
+          "kind": "var_keyword",
+          "annotation": null,
+          "default": null,
+          "has_default": false
+        }
+      ],
+      "return_annotation": "dict",
+      "is_async": false,
+      "parent_class": null,
+      "is_nested": false
+    },
+    {
+      "symbol_id": "pkg/config.py::pkg.config.validate",
+      "name": "validate",
+      "qualified_name": "pkg.config.validate",
+      "type": "function",
+      "file": "pkg/config.py",
+      "module": "pkg.config",
+      "line": 17,
+      "end_line": 20,
+      "col": 0,
+      "decorator_line": null,
+      "parent": null,
+      "decorators": [],
+      "docstring": null,
+      "parameters": [
+        "data",
+        "strict"
+      ],
+      "parameter_details": [
+        {
+          "name": "data",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null,
+          "has_default": false
+        },
+        {
+          "name": "strict",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": "False",
+          "has_default": true
+        }
+      ],
+      "return_annotation": null,
+      "is_async": false,
+      "parent_class": null,
+      "is_nested": false
+    },
+    {
+      "symbol_id": "pkg/config.py::pkg.config.parse_args",
+      "name": "parse_args",
+      "qualified_name": "pkg.config.parse_args",
+      "type": "function",
+      "file": "pkg/config.py",
+      "module": "pkg.config",
+      "line": 23,
+      "end_line": 24,
+      "col": 0,
+      "decorator_line": null,
+      "parent": null,
+      "decorators": [],
+      "docstring": null,
+      "parameters": [
+        "a",
+        "b",
+        "c",
+        "args",
+        "d",
+        "e",
+        "kwargs"
+      ],
+      "parameter_details": [
+        {
+          "name": "a",
+          "kind": "positional_only",
+          "annotation": null,
+          "default": null,
+          "has_default": false
+        },
+        {
+          "name": "b",
+          "kind": "positional_only",
+          "annotation": null,
+          "default": "1",
+          "has_default": true
+        },
+        {
+          "name": "c",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": "2",
+          "has_default": true
+        },
+        {
+          "name": "args",
+          "kind": "var_positional",
+          "annotation": null,
+          "default": null,
+          "has_default": false
+        },
+        {
+          "name": "d",
+          "kind": "keyword_only",
+          "annotation": null,
+          "default": null,
+          "has_default": false
+        },
+        {
+          "name": "e",
+          "kind": "keyword_only",
+          "annotation": "int",
+          "default": "3",
+          "has_default": true
+        },
+        {
+          "name": "kwargs",
+          "kind": "var_keyword",
+          "annotation": null,
+          "default": null,
+          "has_default": false
+        }
+      ],
+      "return_annotation": "None",
+      "is_async": false,
+      "parent_class": null,
+      "is_nested": false
+    },
+    {
+      "symbol_id": "pkg/utils.py::pkg.utils.helper",
+      "name": "helper",
+      "qualified_name": "pkg.utils.helper",
+      "type": "function",
+      "file": "pkg/utils.py",
+      "module": "pkg.utils",
+      "line": 1,
+      "end_line": 2,
+      "col": 0,
+      "decorator_line": null,
+      "parent": null,
+      "decorators": [],
+      "docstring": null,
+      "parameters": [
+        "value"
+      ],
+      "parameter_details": [
+        {
+          "name": "value",
+          "kind": "positional_or_keyword",
+          "annotation": null,
+          "default": null,
+          "has_default": false
+        }
+      ],
+      "return_annotation": null,
+      "is_async": false,
+      "parent_class": null,
+      "is_nested": false
+    }
+  ],
+  "imports": [
+    {
+      "file": "pkg/__init__.py",
+      "line": 3,
+      "kind": "from",
+      "module": "config",
+      "name": "load_config",
+      "alias": null,
+      "level": 1,
+      "resolved_module": "pkg.config",
+      "scope": "<module>"
+    },
+    {
+      "file": "pkg/app.py",
+      "line": 3,
+      "kind": "from",
+      "module": "pkg",
+      "name": "config",
+      "alias": "cfg",
+      "level": 0,
+      "resolved_module": "pkg",
+      "scope": "<module>"
+    },
+    {
+      "file": "pkg/app.py",
+      "line": 4,
+      "kind": "from",
+      "module": "pkg.config",
+      "name": "load_config",
+      "alias": null,
+      "level": 0,
+      "resolved_module": "pkg.config",
+      "scope": "<module>"
+    },
+    {
+      "file": "pkg/app.py",
+      "line": 6,
+      "kind": "from",
+      "module": null,
+      "name": "utils",
+      "alias": null,
+      "level": 1,
+      "resolved_module": "pkg",
+      "scope": "<module>"
+    },
+    {
+      "file": "pkg/config.py",
+      "line": 3,
+      "kind": "import",
+      "module": "json",
+      "name": null,
+      "alias": null,
+      "level": 0,
+      "resolved_module": "json",
+      "scope": "<module>"
+    },
+    {
+      "file": "pkg/config.py",
+      "line": 4,
+      "kind": "from",
+      "module": "pathlib",
+      "name": "Path",
+      "alias": null,
+      "level": 0,
+      "resolved_module": "pathlib",
+      "scope": "<module>"
+    }
+  ],
+  "errors": []
+}

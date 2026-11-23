@@ -3,11 +3,11 @@
   "commit": "c5de5137153b301933922e47bc70b598970e0627",
   "index_errors": [],
   "stats": {
-    "definitions_checked": 674,
-    "ranges_checked": 674,
-    "parameters_checked": 1001,
-    "edges_checked": 4263,
-    "passages_checked": 636
+    "definitions_checked": 654,
+    "ranges_checked": 654,
+    "parameters_checked": 980,
+    "edges_checked": 4133,
+    "passages_checked": 618
   },
   "failures": {},
   "passed": true

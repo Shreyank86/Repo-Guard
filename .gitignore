@@ -83,3 +83,6 @@ Thumbs.db
 scratch/
 *.tmp
 *.bak
+
+# per-case retrieval eval dumps (regenerate with: make retrieval-eval)
+reports/retrieval/*_cases.jsonl

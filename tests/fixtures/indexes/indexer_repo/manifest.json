@@ -1,0 +1,107 @@
+{
+  "schema_version": "1.1",
+  "index_id": "indexer-repo@nocommit-8fd2c222",
+  "repository": {
+    "repository_id": "indexer-repo",
+    "name": "indexer_repo",
+    "repo_path": "tests/fixtures/indexer_repo",
+    "source_url": null,
+    "commit": null,
+    "licence": null,
+    "status": "ready",
+    "total_files": 4,
+    "indexed_files": 4,
+    "failed_files": 0,
+    "total_symbols": 17
+  },
+  "tool_versions": {
+    "repoguard": "0.1.0",
+    "index_schema": "1.1",
+    "indexer": "2.0",
+    "python": "3.11.18",
+    "parser": "ast (CPython 3.11.18)",
+    "pydantic": "2.9.2",
+    "numpy": "1.26.4",
+    "embedding_backend": "hashing",
+    "embedding_model": "hashing-512",
+    "sentence_transformers": "not installed",
+    "faiss": "1.16.0"
+  },
+  "config": {
+    "exclude_dirs": [],
+    "exclude_globs": [],
+    "replace_default_excludes": false,
+    "include_hidden_dirs": false,
+    "include_files": null,
+    "source_roots": [],
+    "passages": {
+      "max_lines": 80,
+      "overlap_lines": 10,
+      "include_module_passages": true,
+      "include_class_passages": true
+    },
+    "embeddings": {
+      "enabled": true,
+      "backend": "hashing",
+      "model": "sentence-transformers/all-MiniLM-L6-v2",
+      "device": "cpu",
+      "batch_size": 32,
+      "hashing_dim": 512,
+      "vector_store": "numpy"
+    },
+    "repository": {
+      "repository_id": null,
+      "name": null,
+      "source_url": null,
+      "commit": null,
+      "licence": null
+    }
+  },
+  "counts": {
+    "files": 4,
+    "files_failed": 0,
+    "symbols": 17,
+    "functions": 8,
+    "methods": 7,
+    "classes": 2,
+    "imports": 6,
+    "call_edges": 24,
+    "call_edges_by_resolution": {
+      "builtin": 4,
+      "external": 2,
+      "imported": 1,
+      "local": 6,
+      "method": 5,
+      "module_attribute": 3,
+      "unresolved": 3
+    },
+    "passages": 20,
+    "errors": 0,
+    "unsupported_files_skipped": 0
+  },
+  "embeddings": {
+    "backend": "hashing",
+    "model": "hashing-512",
+    "dim": 512,
+    "vector_store": "numpy",
+    "index_file": "passages.npy",
+    "meta_file": "vector_meta.json",
+    "files": [
+      "passages.npy",
+      "vector_meta.json"
+    ],
+    "versions": {
+      "embedding_backend": "hashing",
+      "embedding_model": "hashing-512",
+      "sentence_transformers": "not installed",
+      "faiss": "1.16.0"
+    }
+  },
+  "artefacts": {
+    "callgraph.json": "b01ac9e22d527cfaed9ff5e7f50a1579056b4e68a9ba7f8c464d4186ce5c5bd4",
+    "passages.jsonl": "67eb5f4a0c9e9a25e518433d012a40bc43dc37fb0128fe4cd89376a6acd4fdb4",
+    "passages.npy": "d609f7da24515c8b4fa10cb685a61d9eb45aea46b7728213ac79fc83a0ba4866",
+    "symbols.json": "0e5bc4bd7bdb2c37b2557d22b3b8cac0e29a7c339b6b366e30d0eb9825e7f236",
+    "vector_meta.json": "1b77af2ca2e931b5ad4af71db2f51f867d0e094784b0d3f85b80e16f55e0eb80"
+  }
+}

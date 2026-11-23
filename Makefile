@@ -1,4 +1,4 @@
-.PHONY: help install install-all test lint format index validate-index run-backend run-frontend docker-build docker-up docker-down clean
+.PHONY: help install install-all test lint format index validate-index retrieval-eval run-backend run-frontend docker-build docker-up docker-down clean
 
 help:
 	@echo "RepoGuard Development Commands:"
@@ -14,6 +14,7 @@ help:
 	@echo "  make docker-down     Stop Docker Compose services"
 	@echo "  make index           Fetch pinned repos (configs/repos.yaml) and build their indexes"
 	@echo "  make validate-index  Cross-check every built index against its source"
+	@echo "  make retrieval-eval  Build the retrieval benchmark and evaluate retrieval + RL free signals"
 	@echo "  make clean           Clean cache and temporary files"
 
 install:
@@ -39,6 +40,10 @@ validate-index:
 	@for d in data/indexes/*/; do n=$$(basename $$d); \
 		python scripts/validate_index.py --repo data/repos/$$n --index $$d --report reports/index_validation/$$n.json || exit 1; \
 	done
+
+retrieval-eval:
+	python scripts/build_retrieval_benchmark.py
+	python scripts/evaluate_retrieval.py
 
 run-backend:
 	uvicorn repoguard.api.main:app --host 0.0.0.0 --port 8000 --reload

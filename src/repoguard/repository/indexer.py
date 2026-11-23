@@ -19,12 +19,15 @@ paths and records are sorted, no timestamps or absolute paths are written.
 
 from __future__ import annotations
 
+import datetime as dt
 import hashlib
 import json
 import logging
 import os
+import platform
 import re
 import subprocess
+import time
 from collections import Counter
 from pathlib import Path
 from typing import Any
@@ -42,9 +45,11 @@ from repoguard.repository.parser import (
 )
 from repoguard.repository.passage_builder import PassageConfig, build_passages
 from repoguard.schemas import (
+    COMPATIBLE_INDEX_VERSIONS,
     INDEX_SCHEMA_VERSION,
     CallEdge,
     FileMetadata,
+    FreshnessReport,
     ImportInfo,
     IndexArtifacts,
     IndexIssue,
@@ -58,11 +63,17 @@ SYMBOLS_FILE = "symbols.json"
 CALLGRAPH_FILE = "callgraph.json"
 PASSAGES_FILE = "passages.jsonl"
 MANIFEST_FILE = "manifest.json"
+BUILD_INFO_FILE = "build_info.json"
+"""Non-deterministic build metadata (timestamp, duration). Excluded from artefact hashes."""
+
+INDEXER_VERSION = "2.0"
+"""Bump when extraction, call-graph or passage logic changes output for the same input."""
 
 DEFAULT_CONFIG: dict[str, Any] = {
     "exclude_dirs": [],  # added to the built-in exclusions
     "exclude_globs": [],  # fnmatch patterns on repo-relative paths
     "replace_default_excludes": False,
+    "include_hidden_dirs": False,  # index .github/, .devcontainer/ ... (CI helpers, not library code)
     "include_files": None,  # explicit list of repo-relative files; None = scan
     "source_roots": "auto",  # import roots stripped from module names; "auto" detects src/
     "passages": {
@@ -78,6 +89,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "device": "cpu",
         "batch_size": 32,
         "hashing_dim": 512,
+        "vector_store": "auto",  # auto (faiss if importable) | faiss | numpy (portable)
     },
     "repository": {  # provenance; auto-detected from git when omitted
         "repository_id": None,
@@ -165,6 +177,53 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def text_sha256(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def compute_index_id(repository_id: str, commit: str | None, cfg: dict[str, Any]) -> str:
+    """``<repository_id>@<commit12>-<config8>``.
+
+    The config hash covers everything that changes index content (exclusions, passage
+    and embedding settings, schema/indexer versions) but not provenance overrides.
+    """
+    relevant = {k: v for k, v in cfg.items() if k != "repository"}
+    payload = json.dumps(
+        {"config": relevant, "schema": INDEX_SCHEMA_VERSION, "indexer": INDEXER_VERSION},
+        sort_keys=True,
+        default=str,
+    )
+    digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()[:8]
+    return f"{repository_id}@{(commit or 'nocommit')[:12]}-{digest}"
+
+
+def tool_versions() -> dict[str, str]:
+    """Versions that can change index content; recorded in the manifest."""
+    import numpy
+
+    from repoguard import __version__
+
+    versions = {
+        "repoguard": __version__,
+        "index_schema": INDEX_SCHEMA_VERSION,
+        "indexer": INDEXER_VERSION,
+        "python": platform.python_version(),
+        "parser": f"ast ({platform.python_implementation()} {platform.python_version()})",
+        "pydantic": _pkg_version("pydantic"),
+        "numpy": numpy.__version__,
+    }
+    return versions
+
+
+def _pkg_version(name: str) -> str:
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        return version(name)
+    except PackageNotFoundError:
+        return "not installed"
+
+
 # ---------------------------------------------------------------------------
 # build
 # ---------------------------------------------------------------------------
@@ -181,6 +240,7 @@ def build_index(
     Problems with individual files are recorded in ``IndexArtifacts.errors`` and the
     file is marked ``parse_status="error"``; the rest of the repository is still indexed.
     """
+    started = time.perf_counter()
     cfg = merge_config(config)
     root = resolve_repo_root(repo_path)
     out = Path(output_dir)
@@ -194,8 +254,14 @@ def build_index(
     ]
 
     # 1. scan
+    scan_stats: dict[str, int] = {}
     rel_paths, issues = scan_repository(
-        root, frozenset(exclude_dirs), exclude_globs, include_files=cfg["include_files"]
+        root,
+        frozenset(exclude_dirs),
+        exclude_globs,
+        include_files=cfg["include_files"],
+        stats=scan_stats,
+        include_hidden_dirs=cfg["include_hidden_dirs"],
     )
     logger.info("Found %d Python files under %s", len(rel_paths), root)
 
@@ -240,6 +306,8 @@ def build_index(
     )
     issues.sort(key=lambda e: (e.file, e.stage, e.line or 0, e.error_type, e.message))
     passages.sort(key=lambda p: (p.file_path, p.start_line, p.passage_type, p.passage_id))
+    for p in passages:
+        p.content_sha256 = text_sha256(p.content)
 
     failed = sum(1 for f in files if f.parse_status == "error")
     repo_cfg = cfg["repository"]
@@ -257,6 +325,8 @@ def build_index(
         failed_files=failed,
         total_symbols=len(symbols),
     )
+    index_id = compute_index_id(repository.repository_id, repository.commit, cfg)
+    versions = tool_versions()
 
     # 6. write JSON artefacts
     symbols_path = out / SYMBOLS_FILE
@@ -268,6 +338,7 @@ def build_index(
         symbols_path,
         {
             "schema_version": INDEX_SCHEMA_VERSION,
+            "index_id": index_id,
             "repository": repository.model_dump(mode="json"),
             "files": [f.model_dump(mode="json") for f in files],
             "symbols": [s.model_dump(mode="json") for s in symbols],
@@ -279,6 +350,7 @@ def build_index(
         callgraph_path,
         {
             "schema_version": INDEX_SCHEMA_VERSION,
+            "index_id": index_id,
             "repository_id": repository.repository_id,
             "edges": [e.model_dump(mode="json") for e in edges],
         },
@@ -289,6 +361,8 @@ def build_index(
     )
 
     artifacts = IndexArtifacts(
+        index_id=index_id,
+        tool_versions=versions,
         output_dir=str(out),
         symbols_path=str(symbols_path),
         callgraph_path=str(callgraph_path),
@@ -319,11 +393,15 @@ def build_index(
     if embedding_info:
         for fname in embedding_info["files"]:
             artefact_hashes[fname] = _sha256(out / fname)
+        versions = {**versions, **embedding_info.get("versions", {})}
+        artifacts.tool_versions = versions
     _dump_json(
         manifest_path,
         {
             "schema_version": INDEX_SCHEMA_VERSION,
+            "index_id": index_id,
             "repository": repository.model_dump(mode="json"),
+            "tool_versions": versions,
             "config": cfg,
             "counts": {
                 "files": len(files),
@@ -337,9 +415,20 @@ def build_index(
                 "call_edges_by_resolution": dict(sorted(resolution_counts.items())),
                 "passages": len(passages),
                 "errors": len(issues),
+                "unsupported_files_skipped": scan_stats.get("unsupported_files", 0),
             },
             "embeddings": embedding_info,
             "artefacts": dict(sorted(artefact_hashes.items())),
+        },
+    )
+    # build_info.json is the only non-deterministic output (timestamps)
+    _dump_json(
+        out / BUILD_INFO_FILE,
+        {
+            "index_id": index_id,
+            "built_at": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
+            "duration_s": round(time.perf_counter() - started, 3),
+            "platform": platform.platform(terse=True),
         },
     )
     logger.info(
@@ -368,10 +457,18 @@ def load_index(index_dir: str | os.PathLike[str]) -> IndexArtifacts:
     callgraph_doc = json.loads(paths[CALLGRAPH_FILE].read_text(encoding="utf-8"))
     manifest = json.loads(paths[MANIFEST_FILE].read_text(encoding="utf-8"))
     version = symbols_doc.get("schema_version")
-    if version != INDEX_SCHEMA_VERSION:
+    if version not in COMPATIBLE_INDEX_VERSIONS:
         raise IndexNotFoundError(
-            f"Index schema version {version!r} does not match expected {INDEX_SCHEMA_VERSION!r}; rebuild the index."
+            f"Index schema version {version!r} is not supported "
+            f"(expected one of {COMPATIBLE_INDEX_VERSIONS}); rebuild the index."
         )
+    index_id = manifest.get("index_id", "")
+    for name, doc in ((SYMBOLS_FILE, symbols_doc), (CALLGRAPH_FILE, callgraph_doc)):
+        if doc.get("index_id") != index_id:
+            raise IndexNotFoundError(
+                f"{name} belongs to index {doc.get('index_id')!r} but manifest is {index_id!r}; "
+                "the index directory mixes two builds — rebuild it."
+            )
     passages = [
         Passage.model_validate_json(line)
         for line in paths[PASSAGES_FILE].read_text(encoding="utf-8").splitlines()
@@ -379,6 +476,8 @@ def load_index(index_dir: str | os.PathLike[str]) -> IndexArtifacts:
     ]
     emb = manifest.get("embeddings") or {}
     return IndexArtifacts(
+        index_id=index_id,
+        tool_versions=manifest.get("tool_versions", {}),
         output_dir=str(d),
         symbols_path=str(paths[SYMBOLS_FILE]),
         callgraph_path=str(paths[CALLGRAPH_FILE]),
@@ -393,4 +492,54 @@ def load_index(index_dir: str | os.PathLike[str]) -> IndexArtifacts:
         call_edges=[CallEdge.model_validate(e) for e in callgraph_doc["edges"]],
         passages=passages,
         errors=symbols_doc["errors"],
+    )
+
+
+# ---------------------------------------------------------------------------
+# freshness
+# ---------------------------------------------------------------------------
+
+
+def check_freshness(
+    index: IndexArtifacts, repo_path: str | os.PathLike[str] | None = None
+) -> FreshnessReport:
+    """Compare an index with a repository checkout (default: the path it was built from).
+
+    Re-scans with the index's own config and compares file sets and sha256 hashes,
+    plus the git commit when available. Nothing is parsed or executed.
+    """
+    manifest = json.loads(Path(index.manifest_path).read_text(encoding="utf-8"))
+    cfg = merge_config(manifest.get("config"))
+    root = resolve_repo_root(repo_path if repo_path is not None else index.repository.repo_path)
+    exclude_dirs = set() if cfg["replace_default_excludes"] else set(DEFAULT_EXCLUDE_DIRS)
+    exclude_dirs |= set(cfg["exclude_dirs"])
+    exclude_globs = [
+        *([] if cfg["replace_default_excludes"] else DEFAULT_EXCLUDE_GLOBS),
+        *cfg["exclude_globs"],
+    ]
+    current, _ = scan_repository(
+        root,
+        frozenset(exclude_dirs),
+        exclude_globs,
+        include_files=cfg["include_files"],
+        include_hidden_dirs=cfg["include_hidden_dirs"],
+    )
+    indexed = {f.path: f.sha256 for f in index.files}
+    current_set = set(current)
+    changed = sorted(
+        p for p in current_set & indexed.keys() if indexed[p] and _sha256(root / p) != indexed[p]
+    )
+    added = sorted(current_set - indexed.keys())
+    removed = sorted(indexed.keys() - current_set)
+    head = _git(root, "rev-parse", "HEAD")
+    commit_changed = bool(head and index.repository.commit and head != index.repository.commit)
+    return FreshnessReport(
+        index_id=index.index_id,
+        stale=bool(changed or added or removed or commit_changed),
+        indexed_commit=index.repository.commit,
+        current_commit=head,
+        commit_changed=commit_changed,
+        changed_files=changed,
+        added_files=added,
+        removed_files=removed,
     )

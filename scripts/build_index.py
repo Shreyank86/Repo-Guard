@@ -54,6 +54,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     ap.add_argument("--embedding-backend", choices=["auto", "sentence-transformers", "hashing"])
     ap.add_argument(
+        "--vector-store",
+        choices=["auto", "faiss", "numpy"],
+        help="numpy = portable (loads without faiss)",
+    )
+    ap.add_argument(
         "--exclude", action="append", default=[], help="extra directory name to skip (repeatable)"
     )
     ap.add_argument("--name", help="repository display name")
@@ -75,6 +80,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.embedding_backend:
             config["embeddings"]["backend"] = args.embedding_backend
             config["embeddings"].setdefault("enabled", True)
+    if args.vector_store:
+        config.setdefault("embeddings", {})["vector_store"] = args.vector_store
     if args.exclude:
         config["exclude_dirs"] = [*config.get("exclude_dirs", []), *args.exclude]
     if args.name or args.source_url:
@@ -93,6 +100,7 @@ def main(argv: list[str] | None = None) -> int:
     manifest = json.loads(Path(art.manifest_path).read_text(encoding="utf-8"))
     r = art.repository
     c = manifest["counts"]
+    print(f"Index id   : {art.index_id}")
     print(
         f"Repository : {r.name}  ({r.source_url or 'no remote'} @ {(r.commit or 'unknown')[:12]}, licence: {r.licence})"
     )
