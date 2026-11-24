@@ -27,10 +27,10 @@ All core engineering, environments, policies, caches, and test suites are develo
 |                                                                                                 |
 |   1. Clone Shreyank86/Repo-Guard                                                                |
 |   2. Fetch 5 benchmark repos (symlink indexes from Drive if already built)                      |
-|   3. Run Pre-Training Validation Gate (6 checks before launching training)                      |
-|   4. train_agent.py --algo dqn --auto-resume (DQN: 2000 eps, atomic checkpoints every 50 eps)   |
-|   5. train_agent.py --algo reinforce --auto-resume (REINFORCE: 1500 eps)                       |
-|   6. evaluate_rl.py --split validation & evaluate_rl.py --split test                            |
+|   3. Run Pre-Training Validation Gate & Real 4-bit NF4 Qwen Model Validation                   |
+|   4. train_agent.py --algo dqn --split train --auto-resume (DQN: 2000 eps, replay 20k)          |
+|   5. train_agent.py --algo reinforce --split train --auto-resume (REINFORCE: 1500 eps)          |
+|   6. evaluate_rl.py --split validation & evaluate_rl.py --split test (6 risk levels)            |
 +-----------------------------------------------+-------------------------------------------------+
                                                 |
                                                 | (Atomic writes every 50 episodes)
@@ -117,26 +117,28 @@ Because `--auto-resume` is active:
 
 ---
 
-## 6. The 14-Stage Notebook Execution Order
+## 6. The 16-Stage Notebook Execution Order
 
-The notebook [`notebooks/01_train_colab.ipynb`](../notebooks/01_train_colab.ipynb) is organized into 14 distinct steps:
+The notebook [`notebooks/01_train_colab.ipynb`](../notebooks/01_train_colab.ipynb) is organized into 16 distinct, sequential stages:
 
 | Step | Section Name | What It Does |
 |---|---|---|
-| **1** | GPU Verification | Runs `nvidia-smi`, reports GPU model and total VRAM. |
-| **2** | Google Drive Setup | Mounts `/content/drive` and initializes persistent directories for checkpoints, indexes, and cache. |
-| **3** | Repository Setup | Clones or updates `https://github.com/Shreyank86/Repo-Guard.git` and verifies latest commit hash. |
-| **4** | Dependency Installation | Installs `requirements.txt`, `bitsandbytes`, and `repoguard` in editable mode. |
-| **5** | Persistent Indexes | Checks Drive for indexes; symlinks them to `/content/` if found, or builds and backs them up to Drive if missing. |
-| **6** | Unit Tests Smoke Check | Runs pytest on the 5 agent unit test suites. |
-| **7** | Pre-Training Validation Gate | Enforces 6 strict assertion checks on repos, commits, schemas, splits, state vectors, and cache before launching training. |
-| **8** | Transitions & Cache Inspection | Inspects `episode_log.jsonl` (240 transitions) and reports SQLite cache entries. |
-| **9** | DQN Training (Auto-Resume) | Trains DQN for 2,000 episodes on CUDA GPU with periodic atomic checkpointing to Google Drive every 50 episodes. |
-| **10** | REINFORCE Baseline | Trains REINFORCE for 1,500 episodes with baseline subtraction and atomic checkpointing. |
-| **11** | Validation Split Evaluation | Evaluates both models on the `validation` split (12 cases) across $\lambda \in [0.25, 5.0]$ $\to$ `val_dqn.csv`, `val_reinforce.csv`. |
-| **12** | Held-Out Test Evaluation | Evaluates both models on the unpolluted `test` split (12 cases) across $\lambda \in [0.25, 5.0]$ $\to$ `test_dqn.csv`, `test_reinforce.csv`. |
-| **13** | Comparative Risk Curves | Plots Coverage vs. $\lambda$, Hallucination Rate vs. $\lambda$, and Trap Abstention vs. $\lambda$ $\to$ `test_risk_curves.png`. |
-| **14** | Experiment Manifest | Records git commit, GPU name, seeds, and artifact paths into `experiment_manifest.json`. |
+| **1** | GPU & Runtime Validation | Runs `nvidia-smi`, asserts CUDA availability, records GPU model, compute capability, and total VRAM. |
+| **2** | Google Drive Mount & Directories | Mounts `/content/drive` and initializes persistent directories for indexes, cache, episodes, checkpoints, and reports. |
+| **3** | Repository Clone & Commit Recording | Clones or pulls `https://github.com/Shreyank86/Repo-Guard.git` and records exact commit hash and summary. |
+| **4** | Dependency Installation | Installs `requirements.txt`, `bitsandbytes` (for 4-bit NF4 quantized inference), and `repoguard` in editable mode. |
+| **5** | Repository & Index Preparation | Fetches source code; checks Drive for schema 1.1 indexes and symlinks them; rebuilds only missing/invalid indexes. |
+| **6** | Benchmark & Split Validation | Validates all 60 cases: Train (36), Validation (12), Held-out Test (12). Enforces strict repository isolation. |
+| **7** | Model & Cache Validation | Real frozen LLM smoke test: loads `Qwen/Qwen2.5-Coder-3B-Instruct` in 4-bit NF4 on CUDA, generates test tokens, measures latency/VRAM, and verifies SQLite operation cache on Drive. |
+| **8** | RL Environment Validation | Runs pytest suite and verifies 18-dim Box observation vector and 6-dim action masking contracts. |
+| **9** | Offline Transition Collection/Validation | Prewarms cache and validates transitions **strictly on train split** (Option C). Asserts zero val/test leakage. |
+| **10** | Checkpoint Smoke Tests | Rigorous two-process recovery verification for both DQN (replay buffer + RNG) and REINFORCE (baseline + RNG). |
+| **11** | Full DQN Training | 2,000 episodes on CUDA GPU with atomic checkpoints every 50 episodes and auto-resume from Google Drive. |
+| **12** | Full REINFORCE Training | 1,500 episodes with running-mean baseline, atomic checkpoints, and auto-resume from Google Drive. |
+| **13** | Validation Split Evaluation | Evaluates both models on the isolated `validation` split across $\lambda \in [0.25, 5.0] \to$ `val_dqn.csv`, `val_reinforce.csv`. |
+| **14** | Held-Out Test Evaluation | Evaluates both models on the strictly held-out `test` split across $\lambda \in [0.25, 5.0] \to$ `test_dqn.csv`, `test_reinforce.csv`. Zero weight updates. |
+| **15** | Risk-Curve Plots | Generates 3-panel publication-quality risk curves (Coverage, Hallucination Rate, Trap Abstention vs. $\lambda$). |
+| **16** | Experiment Manifest | Records actual measured values (Git commit, repo hashes, models, split sizes, GPU, VRAM, actual episodes, duration, paths). |
 
 ---
 

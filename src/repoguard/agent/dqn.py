@@ -43,6 +43,7 @@ class ReplayBuffer:
     """Experience replay buffer with action mask tracking."""
 
     def __init__(self, capacity: int = 20000) -> None:
+        self.capacity = capacity
         self.buffer: collections.deque[tuple[np.ndarray, int, float, np.ndarray, bool, list[bool]]] = (
             collections.deque(maxlen=capacity)
         )
@@ -72,6 +73,14 @@ class ReplayBuffer:
             torch.tensor(dones, dtype=torch.float32, device=device).unsqueeze(1),
             torch.tensor(np.array(masks), dtype=torch.bool, device=device),
         )
+
+    def get_state(self) -> list[tuple[np.ndarray, int, float, np.ndarray, bool, list[bool]]]:
+        """Return raw list of transitions for serialization."""
+        return list(self.buffer)
+
+    def load_state(self, transitions: list[tuple[np.ndarray, int, float, np.ndarray, bool, list[bool]]]) -> None:
+        """Restore transitions into the replay buffer."""
+        self.buffer = collections.deque(transitions, maxlen=self.capacity)
 
     def __len__(self) -> int:
         return len(self.buffer)
@@ -168,27 +177,62 @@ class DQNAgent:
         return float(loss.item())
 
     def save(self, checkpoint_path: str | Path, metadata: dict[str, Any] | None = None) -> None:
-        """Save policy and optimizer state dicts."""
+        """Save policy, optimizer, replay buffer, RNG states, and metadata atomically."""
         path = Path(checkpoint_path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        torch.save(
-            {
-                "policy_net": self.policy_net.state_dict(),
-                "target_net": self.target_net.state_dict(),
-                "optimizer": self.optimizer.state_dict(),
-                "state_dim": self.state_dim,
-                "action_dim": self.action_dim,
-                "gamma": self.gamma,
-                "metadata": metadata or {},
-            },
-            str(path),
-        )
 
-    def load(self, checkpoint_path: str | Path) -> dict[str, Any]:
-        """Load policy weights from checkpoint."""
+        rng_state = {
+            "torch": torch.get_rng_state(),
+            "cuda": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None,
+            "numpy": np.random.get_state(),
+            "python": random.getstate(),
+        }
+
+        checkpoint_data = {
+            "algo": "dqn",
+            "policy_net": self.policy_net.state_dict(),
+            "target_net": self.target_net.state_dict(),
+            "optimizer": self.optimizer.state_dict(),
+            "state_dim": self.state_dim,
+            "action_dim": self.action_dim,
+            "gamma": self.gamma,
+            "replay_buffer": self.replay_buffer.get_state(),
+            "rng_state": rng_state,
+            "metadata": metadata or {},
+        }
+
+        # Atomic write to temporary file first
+        tmp_path = path.with_suffix(f"{path.suffix}.tmp.{random.randint(10000, 99999)}")
+        torch.save(checkpoint_data, str(tmp_path))
+        tmp_path.replace(path)
+
+        # Post-save verification: confirm file exists and decodes properly
+        verified = torch.load(str(path), map_location="cpu", weights_only=False)
+        assert "policy_net" in verified, f"Corrupted checkpoint saved at {path}"
+
+    def load(self, checkpoint_path: str | Path, restore_rng: bool = True) -> dict[str, Any]:
+        """Load policy weights, replay buffer, and RNG state from checkpoint."""
         checkpoint = torch.load(str(checkpoint_path), map_location=self.device, weights_only=False)
         self.policy_net.load_state_dict(checkpoint["policy_net"])
-        self.target_net.load_state_dict(checkpoint["target_net"])
+        if "target_net" in checkpoint:
+            self.target_net.load_state_dict(checkpoint["target_net"])
         if "optimizer" in checkpoint:
             self.optimizer.load_state_dict(checkpoint["optimizer"])
+        if "replay_buffer" in checkpoint and checkpoint["replay_buffer"] is not None:
+            self.replay_buffer.load_state(checkpoint["replay_buffer"])
+
+        if restore_rng and "rng_state" in checkpoint and checkpoint["rng_state"]:
+            rng = checkpoint["rng_state"]
+            if "torch" in rng and rng["torch"] is not None:
+                torch.set_rng_state(rng["torch"])
+            if "cuda" in rng and rng["cuda"] is not None and torch.cuda.is_available():
+                try:
+                    torch.cuda.set_rng_state_all(rng["cuda"])
+                except Exception:
+                    pass
+            if "numpy" in rng and rng["numpy"] is not None:
+                np.random.set_state(rng["numpy"])
+            if "python" in rng and rng["python"] is not None:
+                random.setstate(rng["python"])
+
         return checkpoint.get("metadata", {})

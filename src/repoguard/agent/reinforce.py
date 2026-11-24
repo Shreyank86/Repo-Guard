@@ -11,6 +11,7 @@ Architecture:
 from __future__ import annotations
 
 from pathlib import Path
+import random
 from typing import Any
 
 import numpy as np
@@ -137,27 +138,58 @@ class REINFORCEAgent:
         self.rewards.clear()
 
     def save(self, checkpoint_path: str | Path, metadata: dict[str, Any] | None = None) -> None:
-        """Save policy weights and optimizer state."""
+        """Save policy weights, optimizer state, running baseline, RNG states, and metadata atomically."""
         path = Path(checkpoint_path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        torch.save(
-            {
-                "policy_net": self.policy_net.state_dict(),
-                "optimizer": self.optimizer.state_dict(),
-                "state_dim": self.state_dim,
-                "action_dim": self.action_dim,
-                "gamma": self.gamma,
-                "baseline": self.baseline,
-                "metadata": metadata or {},
-            },
-            str(path),
-        )
 
-    def load(self, checkpoint_path: str | Path) -> dict[str, Any]:
-        """Load policy weights from checkpoint."""
+        rng_state = {
+            "torch": torch.get_rng_state(),
+            "cuda": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None,
+            "numpy": np.random.get_state(),
+            "python": random.getstate(),
+        }
+
+        checkpoint_data = {
+            "algo": "reinforce",
+            "policy_net": self.policy_net.state_dict(),
+            "optimizer": self.optimizer.state_dict(),
+            "state_dim": self.state_dim,
+            "action_dim": self.action_dim,
+            "gamma": self.gamma,
+            "baseline": self.baseline,
+            "rng_state": rng_state,
+            "metadata": metadata or {},
+        }
+
+        # Atomic write to temporary file first
+        tmp_path = path.with_suffix(f"{path.suffix}.tmp.{random.randint(10000, 99999)}")
+        torch.save(checkpoint_data, str(tmp_path))
+        tmp_path.replace(path)
+
+        # Post-save verification: confirm file exists and decodes properly
+        verified = torch.load(str(path), map_location="cpu", weights_only=False)
+        assert "policy_net" in verified, f"Corrupted checkpoint saved at {path}"
+
+    def load(self, checkpoint_path: str | Path, restore_rng: bool = True) -> dict[str, Any]:
+        """Load policy weights, baseline, and RNG state from checkpoint."""
         checkpoint = torch.load(str(checkpoint_path), map_location=self.device, weights_only=False)
         self.policy_net.load_state_dict(checkpoint["policy_net"])
         if "optimizer" in checkpoint:
             self.optimizer.load_state_dict(checkpoint["optimizer"])
         self.baseline = checkpoint.get("baseline", 0.0)
+
+        if restore_rng and "rng_state" in checkpoint and checkpoint["rng_state"]:
+            rng = checkpoint["rng_state"]
+            if "torch" in rng and rng["torch"] is not None:
+                torch.set_rng_state(rng["torch"])
+            if "cuda" in rng and rng["cuda"] is not None and torch.cuda.is_available():
+                try:
+                    torch.cuda.set_rng_state_all(rng["cuda"])
+                except Exception:
+                    pass
+            if "numpy" in rng and rng["numpy"] is not None:
+                np.random.set_state(rng["numpy"])
+            if "python" in rng and rng["python"] is not None:
+                random.setstate(rng["python"])
+
         return checkpoint.get("metadata", {})

@@ -65,6 +65,12 @@ def train() -> None:
         help="Number of training episodes",
     )
     parser.add_argument(
+        "--split",
+        choices=["train", "validation", "test"],
+        default="train",
+        help="Benchmark split to train on (strictly 'train' for training)",
+    )
+    parser.add_argument(
         "--benchmark",
         type=Path,
         default=ROOT / "data/questions/phase2_benchmark_v1.jsonl",
@@ -125,6 +131,12 @@ def train() -> None:
         help="Batch size for DQN updates",
     )
     parser.add_argument(
+        "--replay-capacity",
+        type=int,
+        default=20000,
+        help="Replay buffer capacity for DQN",
+    )
+    parser.add_argument(
         "--seed",
         type=int,
         default=42,
@@ -149,14 +161,25 @@ def train() -> None:
     ckpt_dir = args.checkpoint_dir or (ROOT / "data/checkpoints" / args.algo)
     ckpt_dir.mkdir(parents=True, exist_ok=True)
 
-    logger.info("Starting %s training on %s (seed: %d)", args.algo.upper(), args.device, args.seed)
+    logger.info("Starting %s training on %s (seed: %d, split: %s)", args.algo.upper(), args.device, args.seed, args.split)
     logger.info("Loading benchmark cases from %s", args.benchmark)
     cases = load_benchmark(args.benchmark)
 
-    # Filter to train cases if annotated
-    train_cases = [c for c in cases if getattr(c, "split", "train") in ("train", "all")]
-    if not train_cases:
-        train_cases = cases
+    # Strictly enforce split boundary
+    train_cases = [c for c in cases if getattr(c, "split", "") == args.split]
+    assert len(train_cases) > 0, f"No cases found for split '{args.split}' in {args.benchmark}!"
+
+    if args.split == "train":
+        if len(cases) == 60:
+            assert len(train_cases) == 36, f"Expected exactly 36 train cases in benchmark v1, got {len(train_cases)}"
+        # Strict boundary assertion: verify 0 validation or test cases are in train_cases
+        assert all(c.split == "train" for c in train_cases), "Non-train cases found in training split!"
+        assert not any(c.split in ("validation", "test") for c in train_cases), (
+            "Data leakage: validation or test cases found in training split!"
+        )
+        logger.info("[VERIFIED] Training strictly restricted to %d train cases (0 val/test leakage).", len(train_cases))
+    else:
+        logger.warning("Training on non-train split '%s' (%d cases).", args.split, len(train_cases))
 
     repo_names = {c.repository_id for c in train_cases}
     indexes: dict[str, IndexArtifacts] = {name: load_index(args.indexes / name) for name in repo_names}
@@ -177,6 +200,7 @@ def train() -> None:
             state_dim=18,
             action_dim=6,
             learning_rate=args.learning_rate,
+            buffer_capacity=args.replay_capacity,
             device=args.device,
         )
     else:
@@ -212,7 +236,7 @@ def train() -> None:
 
     if resume_path and Path(resume_path).exists():
         logger.info("Resuming %s from checkpoint: %s", args.algo.upper(), resume_path)
-        meta = agent.load(resume_path)
+        meta = agent.load(resume_path, restore_rng=True)
         last_ep = meta.get("episode", 0)
         start_episode = last_ep + 1
         if "epsilon" in meta and meta["epsilon"] is not None and args.algo == "dqn":
@@ -230,12 +254,14 @@ def train() -> None:
             except Exception as e:
                 logger.warning("Could not parse existing training history: %s", e)
 
+        buffer_info = f", replay buffer: {len(agent.replay_buffer)}" if args.algo == "dqn" else ""
         logger.info(
-            "Resumed state: starting at episode %d/%d (epsilon: %.4f, history records: %d)",
+            "Resumed state: starting at episode %d/%d (epsilon: %.4f, history records: %d%s)",
             start_episode,
             args.episodes,
             epsilon,
             len(history),
+            buffer_info,
         )
 
     if start_episode > args.episodes:
@@ -315,24 +341,22 @@ def train() -> None:
             # Atomic checkpoint every save_interval episodes
             if episode % args.save_interval == 0 or episode == args.episodes:
                 ckpt_path = ckpt_dir / f"{args.algo}_checkpoint_ep{episode}.pt"
-                tmp_ckpt = ckpt_path.with_suffix(".pt.tmp")
+                latest_path = ckpt_dir / f"{args.algo}_policy_latest.pt"
                 mean_r = sum(recent_rewards[-args.log_interval:]) / max(1, len(recent_rewards[-args.log_interval:]))
                 meta_payload = {
                     "algo": args.algo,
                     "episode": episode,
+                    "target_episodes": args.episodes,
                     "seed": args.seed,
+                    "split": args.split,
+                    "learning_rate": args.learning_rate,
+                    "batch_size": args.batch_size if args.algo == "dqn" else None,
                     "epsilon": epsilon if args.algo == "dqn" else None,
                     "recent_mean_reward": round(mean_r, 4),
                     "training_time_sec": round(time.perf_counter() - start_time, 2),
                 }
-                agent.save(tmp_ckpt, metadata=meta_payload)
-                tmp_ckpt.replace(ckpt_path)
-
-                # Update latest policy checkpoint atomically
-                latest_path = ckpt_dir / f"{args.algo}_policy_latest.pt"
-                tmp_latest = latest_path.with_suffix(".pt.tmp")
-                agent.save(tmp_latest, metadata=meta_payload)
-                tmp_latest.replace(latest_path)
+                agent.save(ckpt_path, metadata=meta_payload)
+                agent.save(latest_path, metadata=meta_payload)
 
                 # Persist metrics JSON atomically
                 metrics_file = ckpt_dir / f"{args.algo}_training_history.json"

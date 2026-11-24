@@ -3,7 +3,10 @@
 Owner: Member 3 (RL Environment, Training & Model Integration)
 
 Generates environment transitions across benchmark questions and actions,
-saving them to data/episodes/episode_log.jsonl for fast, repeated policy training.
+saving them to data/episodes/episode_log.jsonl for environment validation,
+trace inspection, and operation-cache prewarming (Design Option C).
+Note: Offline transitions are strictly NOT used to train policies directly;
+both DQN and REINFORCE train via active online environment interaction.
 """
 
 from __future__ import annotations
@@ -33,10 +36,22 @@ def main() -> None:
         help="Path to benchmark JSONL",
     )
     parser.add_argument(
+        "--split",
+        choices=["train", "validation", "test"],
+        default="train",
+        help="Benchmark split to collect transitions for (strictly 'train' for prewarming training cache)",
+    )
+    parser.add_argument(
         "--indexes",
         type=Path,
         default=Path("data/indexes"),
         help="Path to repository indexes directory",
+    )
+    parser.add_argument(
+        "--cache-db",
+        type=Path,
+        default=Path("data/cache/operations.db"),
+        help="Path to persistent SQLite operation cache",
     )
     parser.add_argument(
         "--output",
@@ -60,14 +75,25 @@ def main() -> None:
     args = parser.parse_args()
     args.output.parent.mkdir(parents=True, exist_ok=True)
 
-    logger.info("Loading benchmark cases from %s", args.benchmark)
-    cases = load_benchmark(args.benchmark)
+    logger.info("Loading benchmark cases from %s (split: %s)", args.benchmark, args.split)
+    all_cases = load_benchmark(args.benchmark)
+    cases = [c for c in all_cases if getattr(c, "split", "") == args.split]
+
+    assert len(cases) > 0, f"No cases found for split '{args.split}' in {args.benchmark}!"
+    if args.split == "train":
+        if len(all_cases) == 60:
+            assert len(cases) == 36, f"Expected 36 train cases in benchmark v1, got {len(cases)}"
+        assert all(c.split == "train" for c in cases), "All cases must belong to the train split!"
+        assert not any(c.split in ("validation", "test") for c in cases), (
+            "Data leakage: validation or test cases found in transition collection!"
+        )
+        logger.info("[VERIFIED] Offline transitions restricted strictly to %d train cases.", len(cases))
 
     repo_names = {c.repository_id for c in cases}
     logger.info("Loading indexes for %d repositories: %s", len(repo_names), sorted(repo_names))
     indexes: dict[str, IndexArtifacts] = {name: load_index(args.indexes / name) for name in repo_names}
 
-    cache = OperationCache()
+    cache = OperationCache(db_path=args.cache_db)
     llm = LLMService(mock_mode=args.mock)
 
     env = RepoGuardEnv(
