@@ -364,6 +364,10 @@ def train() -> None:
                 tmp_metrics.write_text(json.dumps(history, indent=2), encoding="utf-8")
                 tmp_metrics.replace(metrics_file)
 
+                # Periodic GPU memory cleanup to prevent memory fragmentation during long runs
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+
         except Exception as exc:
             logger.error("Episode %d failed with error: %s. Skipping to next episode...", episode, exc)
             continue

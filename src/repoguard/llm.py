@@ -209,8 +209,12 @@ class LLMService:
                     cache_dir=self.cache_dir,
                     trust_remote_code=True,
                 )
-                # Ensure all buffers and parameters (such as RoPE rotary embeddings) are on GPU
-                torch.nn.Module.to(self._model, "cuda:0")
+                # When device_map="auto" is used, bitsandbytes / accelerate already places the model on GPU.
+                try:
+                    if not hasattr(self._model, "hf_device_map"):
+                        torch.nn.Module.to(self._model, "cuda:0")
+                except Exception:
+                    pass
             except Exception as e:
                 logger.warning(
                     "4-bit quantization unavailable (%s). Falling back to float16 on %s.",

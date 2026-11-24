@@ -137,6 +137,16 @@ class OperationCache:
             cur.execute("SELECT 1 FROM operations WHERE key_hash = ?", (key,))
             return cur.fetchone() is not None
 
+    def size(self) -> int:
+        """Return total count of cached operations."""
+        with self._get_connection() as conn:
+            cur = conn.cursor()
+            cur.execute("SELECT COUNT(*) FROM operations")
+            return int(cur.fetchone()[0])
+
+    def __len__(self) -> int:
+        return self.size()
+
     def stats(self) -> dict[str, Any]:
         """Return cache access statistics and counts by operation type."""
         with self._get_connection() as conn:
