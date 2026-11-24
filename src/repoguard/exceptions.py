@@ -51,3 +51,13 @@ class BaselineError(RepoGuardError):
 class AgentError(RepoGuardError):
     """RL environment transition or policy execution failed."""
 
+
+# --- Retrieval (Member 1, Phase 2) ------------------------------------------
+
+
+class InvalidQueryError(RepoGuardError, ValueError):
+    """A search/inspect request had an invalid query, k, filter or target."""
+
+
+class StaleIndexError(RepoGuardError):
+    """The repository on disk no longer matches the index (or vectors no longer match passages)."""

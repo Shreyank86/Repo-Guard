@@ -1,0 +1,271 @@
+{
+  "schema_version": "1.1",
+  "index_id": "indexer-repo@nocommit-8fd2c222",
+  "repository_id": "indexer-repo",
+  "edges": [
+    {
+      "caller": "pkg.app.BaseService.start",
+      "caller_name": "start",
+      "callee": "ready",
+      "callee_expr": "self.ready",
+      "callee_qualified": "pkg.app.BaseService.ready",
+      "resolution": "method",
+      "file": "pkg/app.py",
+      "line": 11,
+      "col": 15
+    },
+    {
+      "caller": "pkg.app.App.initialize_app",
+      "caller_name": "initialize_app",
+      "callee": "load_config",
+      "callee_expr": "load_config",
+      "callee_qualified": "pkg.config.load_config",
+      "resolution": "imported",
+      "file": "pkg/app.py",
+      "line": 28,
+      "col": 22
+    },
+    {
+      "caller": "pkg.app.App.initialize_app",
+      "caller_name": "initialize_app",
+      "callee": "validate",
+      "callee_expr": "cfg.validate",
+      "callee_qualified": "pkg.config.validate",
+      "resolution": "module_attribute",
+      "file": "pkg/app.py",
+      "line": 29,
+      "col": 8
+    },
+    {
+      "caller": "pkg.app.App.initialize_app",
+      "caller_name": "initialize_app",
+      "callee": "start",
+      "callee_expr": "self.start",
+      "callee_qualified": "pkg.app.BaseService.start",
+      "resolution": "method",
+      "file": "pkg/app.py",
+      "line": 30,
+      "col": 8
+    },
+    {
+      "caller": "pkg.app.App.initialize_app",
+      "caller_name": "initialize_app",
+      "callee": "helper",
+      "callee_expr": "utils.helper",
+      "callee_qualified": "pkg.utils.helper",
+      "resolution": "module_attribute",
+      "file": "pkg/app.py",
+      "line": 31,
+      "col": 15
+    },
+    {
+      "caller": "pkg.app.App.initialize_app",
+      "caller_name": "initialize_app",
+      "callee": "len",
+      "callee_expr": "len",
+      "callee_qualified": "builtins.len",
+      "resolution": "builtin",
+      "file": "pkg/app.py",
+      "line": 31,
+      "col": 28
+    },
+    {
+      "caller": "pkg.app.App.build",
+      "caller_name": "build",
+      "callee": "App",
+      "callee_expr": "App",
+      "callee_qualified": "pkg.app.App",
+      "resolution": "local",
+      "file": "pkg/app.py",
+      "line": 35,
+      "col": 15
+    },
+    {
+      "caller": "pkg.app.App.fetch.inner",
+      "caller_name": "inner",
+      "callee": "helper",
+      "callee_expr": "utils.helper",
+      "callee_qualified": "pkg.utils.helper",
+      "resolution": "module_attribute",
+      "file": "pkg/app.py",
+      "line": 39,
+      "col": 19
+    },
+    {
+      "caller": "pkg.app.App.fetch",
+      "caller_name": "fetch",
+      "callee": "inner",
+      "callee_expr": "inner",
+      "callee_qualified": "pkg.app.App.fetch.inner",
+      "resolution": "local",
+      "file": "pkg/app.py",
+      "line": 41,
+      "col": 15
+    },
+    {
+      "caller": "pkg.app.App.restart",
+      "caller_name": "restart",
+      "callee": "super",
+      "callee_expr": "super",
+      "callee_qualified": "builtins.super",
+      "resolution": "builtin",
+      "file": "pkg/app.py",
+      "line": 44,
+      "col": 8
+    },
+    {
+      "caller": "pkg.app.App.restart",
+      "caller_name": "restart",
+      "callee": "start",
+      "callee_expr": "super().start",
+      "callee_qualified": "pkg.app.BaseService.start",
+      "resolution": "method",
+      "file": "pkg/app.py",
+      "line": 44,
+      "col": 8
+    },
+    {
+      "caller": "pkg.app.main",
+      "caller_name": "main",
+      "callee": "build",
+      "callee_expr": "App.build",
+      "callee_qualified": "pkg.app.App.build",
+      "resolution": "method",
+      "file": "pkg/app.py",
+      "line": 48,
+      "col": 10
+    },
+    {
+      "caller": "pkg.app.main",
+      "caller_name": "main",
+      "callee": "initialize_app",
+      "callee_expr": "app.initialize_app",
+      "callee_qualified": null,
+      "resolution": "unresolved",
+      "file": "pkg/app.py",
+      "line": 49,
+      "col": 4
+    },
+    {
+      "caller": "pkg.app.main",
+      "caller_name": "main",
+      "callee": "print",
+      "callee_expr": "print",
+      "callee_qualified": "builtins.print",
+      "resolution": "builtin",
+      "file": "pkg/app.py",
+      "line": 50,
+      "col": 4
+    },
+    {
+      "caller": "pkg.app.main",
+      "caller_name": "main",
+      "callee": "compute",
+      "callee_expr": "compute",
+      "callee_qualified": "pkg.app.compute",
+      "resolution": "local",
+      "file": "pkg/app.py",
+      "line": 50,
+      "col": 10
+    },
+    {
+      "caller": "pkg.app.main",
+      "caller_name": "main",
+      "callee": "nested",
+      "callee_expr": "nested",
+      "callee_qualified": "pkg.app.nested",
+      "resolution": "local",
+      "file": "pkg/app.py",
+      "line": 50,
+      "col": 18
+    },
+    {
+      "caller": "pkg.app.<module>",
+      "caller_name": "<module>",
+      "callee": "App",
+      "callee_expr": "App",
+      "callee_qualified": "pkg.app.App",
+      "resolution": "local",
+      "file": "pkg/app.py",
+      "line": 61,
+      "col": 15
+    },
+    {
+      "caller": "pkg.app.<module>",
+      "caller_name": "<module>",
+      "callee": "initialize_app",
+      "callee_expr": "app_instance.initialize_app",
+      "callee_qualified": "pkg.app.App.initialize_app",
+      "resolution": "method",
+      "file": "pkg/app.py",
+      "line": 62,
+      "col": 0
+    },
+    {
+      "caller": "pkg.config.load_config",
+      "caller_name": "load_config",
+      "callee": "loads",
+      "callee_expr": "json.loads",
+      "callee_qualified": "json.loads",
+      "resolution": "external",
+      "file": "pkg/config.py",
+      "line": 11,
+      "col": 11
+    },
+    {
+      "caller": "pkg.config.load_config",
+      "caller_name": "load_config",
+      "callee": "Path",
+      "callee_expr": "Path",
+      "callee_qualified": "pathlib.Path",
+      "resolution": "external",
+      "file": "pkg/config.py",
+      "line": 11,
+      "col": 22
+    },
+    {
+      "caller": "pkg.config.load_config",
+      "caller_name": "load_config",
+      "callee": "read_text",
+      "callee_expr": "Path(path).read_text",
+      "callee_qualified": null,
+      "resolution": "unresolved",
+      "file": "pkg/config.py",
+      "line": 11,
+      "col": 22
+    },
+    {
+      "caller": "pkg.config.load_config",
+      "caller_name": "load_config",
+      "callee": "validate",
+      "callee_expr": "validate",
+      "callee_qualified": "pkg.config.validate",
+      "resolution": "local",
+      "file": "pkg/config.py",
+      "line": 12,
+      "col": 4
+    },
+    {
+      "caller": "pkg.config.load_config",
+      "caller_name": "load_config",
+      "callee": "update",
+      "callee_expr": "data.update",
+      "callee_qualified": null,
+      "resolution": "unresolved",
+      "file": "pkg/config.py",
+      "line": 13,
+      "col": 4
+    },
+    {
+      "caller": "pkg.config.validate",
+      "caller_name": "validate",
+      "callee": "ValueError",
+      "callee_expr": "ValueError",
+      "callee_qualified": "builtins.ValueError",
+      "resolution": "builtin",
+      "file": "pkg/config.py",
+      "line": 19,
+      "col": 14
+    }
+  ]
+}

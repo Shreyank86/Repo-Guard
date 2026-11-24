@@ -1,0 +1,31 @@
+{
+  "index_id": "indexer-repo@nocommit-8fd2c222",
+  "backend": "hashing",
+  "model": "hashing-512",
+  "device": "cpu",
+  "dim": 512,
+  "count": 20,
+  "vector_store": "numpy",
+  "ids": [
+    "pkg/__init__.py::<module>",
+    "pkg/app.py::<module>",
+    "pkg/app.py::pkg.app.BaseService",
+    "pkg/app.py::pkg.app.BaseService.start",
+    "pkg/app.py::pkg.app.BaseService.ready",
+    "pkg/app.py::pkg.app.App",
+    "pkg/app.py::pkg.app.App.__init__",
+    "pkg/app.py::pkg.app.App.initialize_app",
+    "pkg/app.py::pkg.app.App.build",
+    "pkg/app.py::pkg.app.App.fetch",
+    "pkg/app.py::pkg.app.App.restart",
+    "pkg/app.py::pkg.app.main",
+    "pkg/app.py::pkg.app.compute",
+    "pkg/app.py::pkg.app.nested",
+    "pkg/config.py::<module>",
+    "pkg/config.py::pkg.config.load_config",
+    "pkg/config.py::pkg.config.validate",
+    "pkg/config.py::pkg.config.parse_args",
+    "pkg/utils.py::pkg.utils.helper",
+    "pkg/utils.py::<module>"
+  ]
+}

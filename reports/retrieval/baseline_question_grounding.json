@@ -1,0 +1,751 @@
+[
+  {
+    "question_id": "q_ans_01",
+    "question_type": "where_defined",
+    "target_symbol": "Job",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      28,
+      160
+    ],
+    "resolved": [
+      "schedule.Job (schedule/__init__.py:209-830)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_02",
+    "question_type": "where_defined",
+    "target_symbol": "Scheduler",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      620,
+      850
+    ],
+    "resolved": [
+      "schedule.Scheduler (schedule/__init__.py:79-206)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_03",
+    "question_type": "where_defined",
+    "target_symbol": "every",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      860,
+      875
+    ],
+    "resolved": [
+      "schedule.Scheduler.every (schedule/__init__.py:162-170)",
+      "schedule.every (schedule/__init__.py:843-847)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_04",
+    "question_type": "where_defined",
+    "target_symbol": "run_pending",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      878,
+      885
+    ],
+    "resolved": [
+      "schedule.Scheduler.run_pending (schedule/__init__.py:89-101)",
+      "schedule.run_pending (schedule/__init__.py:850-854)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_05",
+    "question_type": "where_defined",
+    "target_symbol": "run_all",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      888,
+      895
+    ],
+    "resolved": [
+      "schedule.Scheduler.run_all (schedule/__init__.py:103-120)",
+      "schedule.run_all (schedule/__init__.py:857-861)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_06",
+    "question_type": "where_defined",
+    "target_symbol": "clear",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      898,
+      905
+    ],
+    "resolved": [
+      "schedule.Scheduler.clear (schedule/__init__.py:135-148)",
+      "schedule.clear (schedule/__init__.py:871-875)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_07",
+    "question_type": "where_defined",
+    "target_symbol": "cancel_job",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      908,
+      915
+    ],
+    "resolved": [
+      "schedule.Scheduler.cancel_job (schedule/__init__.py:150-160)",
+      "schedule.cancel_job (schedule/__init__.py:878-882)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_08",
+    "question_type": "where_defined",
+    "target_symbol": "next_run",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      918,
+      925
+    ],
+    "resolved": [
+      "schedule.next_run (schedule/__init__.py:885-889)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_09",
+    "question_type": "where_defined",
+    "target_symbol": "idle_seconds",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      928,
+      935
+    ],
+    "resolved": [
+      "schedule.Scheduler.idle_seconds (schedule/__init__.py:198-206)",
+      "schedule.idle_seconds (schedule/__init__.py:892-896)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_10",
+    "question_type": "where_defined",
+    "target_symbol": "Job.do",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      580,
+      600
+    ],
+    "resolved": [
+      "schedule.Job.do (schedule/__init__.py:644-664)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_11",
+    "question_type": "where_defined",
+    "target_symbol": "Job.at",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      420,
+      460
+    ],
+    "resolved": [
+      "schedule.Job.at (schedule/__init__.py:471-559)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_12",
+    "question_type": "where_defined",
+    "target_symbol": "Job.tag",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      540,
+      560
+    ],
+    "resolved": [
+      "schedule.Job.tag (schedule/__init__.py:457-469)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_13",
+    "question_type": "where_defined",
+    "target_symbol": "Job.should_run",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      350,
+      365
+    ],
+    "resolved": [
+      "schedule.Job.should_run (schedule/__init__.py:667-672)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_14",
+    "question_type": "where_defined",
+    "target_symbol": "CancelJob",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      20,
+      26
+    ],
+    "resolved": [
+      "schedule.CancelJob (schedule/__init__.py:71-76)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_15",
+    "question_type": "where_defined",
+    "target_symbol": "default_scheduler",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      855,
+      860
+    ],
+    "resolved": [],
+    "lines_overlap": null,
+    "note": "target is not a definition; using the module overview passage"
+  },
+  {
+    "question_id": "q_ans_16",
+    "question_type": "parameters",
+    "target_symbol": "Job.__init__",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      35,
+      60
+    ],
+    "resolved": [
+      "schedule.Job.__init__ (schedule/__init__.py:227-255)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_17",
+    "question_type": "parameters",
+    "target_symbol": "Job.do",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      580,
+      600
+    ],
+    "resolved": [
+      "schedule.Job.do (schedule/__init__.py:644-664)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_18",
+    "question_type": "parameters",
+    "target_symbol": "Scheduler.every",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      660,
+      675
+    ],
+    "resolved": [
+      "schedule.Scheduler.every (schedule/__init__.py:162-170)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_19",
+    "question_type": "parameters",
+    "target_symbol": "Scheduler.run_all",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      780,
+      800
+    ],
+    "resolved": [
+      "schedule.Scheduler.run_all (schedule/__init__.py:103-120)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_20",
+    "question_type": "parameters",
+    "target_symbol": "Scheduler.clear",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      730,
+      750
+    ],
+    "resolved": [
+      "schedule.Scheduler.clear (schedule/__init__.py:135-148)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_21",
+    "question_type": "parameters",
+    "target_symbol": "Job.at",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      420,
+      440
+    ],
+    "resolved": [
+      "schedule.Job.at (schedule/__init__.py:471-559)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_22",
+    "question_type": "parameters",
+    "target_symbol": "Job.to",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      400,
+      418
+    ],
+    "resolved": [
+      "schedule.Job.to (schedule/__init__.py:561-574)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_23",
+    "question_type": "parameters",
+    "target_symbol": "Scheduler.cancel_job",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      755,
+      775
+    ],
+    "resolved": [
+      "schedule.Scheduler.cancel_job (schedule/__init__.py:150-160)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_24",
+    "question_type": "parameters",
+    "target_symbol": "Job.run",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      602,
+      615
+    ],
+    "resolved": [
+      "schedule.Job.run (schedule/__init__.py:674-698)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_25",
+    "question_type": "parameters",
+    "target_symbol": "Scheduler.get_jobs",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      720,
+      728
+    ],
+    "resolved": [
+      "schedule.Scheduler.get_jobs (schedule/__init__.py:122-133)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_26",
+    "question_type": "parameters",
+    "target_symbol": "Job.second",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      170,
+      180
+    ],
+    "resolved": [
+      "schedule.Job.second (schedule/__init__.py:326-329)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_27",
+    "question_type": "parameters",
+    "target_symbol": "Job.minute",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      185,
+      195
+    ],
+    "resolved": [
+      "schedule.Job.minute (schedule/__init__.py:337-340)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_28",
+    "question_type": "parameters",
+    "target_symbol": "Job.hour",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      200,
+      210
+    ],
+    "resolved": [
+      "schedule.Job.hour (schedule/__init__.py:348-351)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_29",
+    "question_type": "parameters",
+    "target_symbol": "Job.day",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      215,
+      225
+    ],
+    "resolved": [
+      "schedule.Job.day (schedule/__init__.py:359-362)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_30",
+    "question_type": "parameters",
+    "target_symbol": "Job.until",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      465,
+      495
+    ],
+    "resolved": [
+      "schedule.Job.until (schedule/__init__.py:576-642)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_31",
+    "question_type": "callers",
+    "target_symbol": "Job.run",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      602,
+      615
+    ],
+    "resolved": [
+      "schedule.Job.run (schedule/__init__.py:674-698)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_32",
+    "question_type": "callers",
+    "target_symbol": "Scheduler.run_pending",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      770,
+      790
+    ],
+    "resolved": [
+      "schedule.Scheduler.run_pending (schedule/__init__.py:89-101)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_33",
+    "question_type": "callers",
+    "target_symbol": "every",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      860,
+      875
+    ],
+    "resolved": [
+      "schedule.Scheduler.every (schedule/__init__.py:162-170)",
+      "schedule.every (schedule/__init__.py:843-847)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_34",
+    "question_type": "callers",
+    "target_symbol": "run_pending",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      878,
+      885
+    ],
+    "resolved": [
+      "schedule.Scheduler.run_pending (schedule/__init__.py:89-101)",
+      "schedule.run_pending (schedule/__init__.py:850-854)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_35",
+    "question_type": "callers",
+    "target_symbol": "run_all",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      888,
+      895
+    ],
+    "resolved": [
+      "schedule.Scheduler.run_all (schedule/__init__.py:103-120)",
+      "schedule.run_all (schedule/__init__.py:857-861)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_36",
+    "question_type": "callers",
+    "target_symbol": "clear",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      898,
+      905
+    ],
+    "resolved": [
+      "schedule.Scheduler.clear (schedule/__init__.py:135-148)",
+      "schedule.clear (schedule/__init__.py:871-875)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_37",
+    "question_type": "callers",
+    "target_symbol": "cancel_job",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      908,
+      915
+    ],
+    "resolved": [
+      "schedule.Scheduler.cancel_job (schedule/__init__.py:150-160)",
+      "schedule.cancel_job (schedule/__init__.py:878-882)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_38",
+    "question_type": "callers",
+    "target_symbol": "Job.should_run",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      350,
+      365
+    ],
+    "resolved": [
+      "schedule.Job.should_run (schedule/__init__.py:667-672)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_39",
+    "question_type": "callers",
+    "target_symbol": "Scheduler._run_job",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      795,
+      815
+    ],
+    "resolved": [
+      "schedule.Scheduler._run_job (schedule/__init__.py:172-175)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_40",
+    "question_type": "callers",
+    "target_symbol": "next_run",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      918,
+      925
+    ],
+    "resolved": [
+      "schedule.next_run (schedule/__init__.py:885-889)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_41",
+    "question_type": "imports",
+    "target_symbol": "imports",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      1,
+      15
+    ],
+    "resolved": [],
+    "lines_overlap": null,
+    "note": "target is not a definition; using the module overview passage"
+  },
+  {
+    "question_id": "q_ans_42",
+    "question_type": "imports",
+    "target_symbol": "datetime",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      5,
+      6
+    ],
+    "resolved": [],
+    "lines_overlap": null,
+    "note": "target is not a definition; using the module overview passage"
+  },
+  {
+    "question_id": "q_ans_43",
+    "question_type": "imports",
+    "target_symbol": "functools",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      7,
+      8
+    ],
+    "resolved": [],
+    "lines_overlap": null,
+    "note": "target is not a definition; using the module overview passage"
+  },
+  {
+    "question_id": "q_ans_44",
+    "question_type": "imports",
+    "target_symbol": "logging",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      9,
+      10
+    ],
+    "resolved": [],
+    "lines_overlap": null,
+    "note": "target is not a definition; using the module overview passage"
+  },
+  {
+    "question_id": "q_ans_45",
+    "question_type": "imports",
+    "target_symbol": "typing",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      11,
+      15
+    ],
+    "resolved": [],
+    "lines_overlap": null,
+    "note": "target is not a definition; using the module overview passage"
+  },
+  {
+    "question_id": "q_ans_46",
+    "question_type": "inheritance",
+    "target_symbol": "CancelJob",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      20,
+      25
+    ],
+    "resolved": [
+      "schedule.CancelJob (schedule/__init__.py:71-76)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_47",
+    "question_type": "inheritance",
+    "target_symbol": "Scheduler",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      620,
+      630
+    ],
+    "resolved": [
+      "schedule.Scheduler (schedule/__init__.py:79-206)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_48",
+    "question_type": "inheritance",
+    "target_symbol": "Job",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      28,
+      35
+    ],
+    "resolved": [
+      "schedule.Job (schedule/__init__.py:209-830)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_49",
+    "question_type": "where_defined",
+    "target_symbol": "ScheduleError",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      15,
+      19
+    ],
+    "resolved": [
+      "schedule.ScheduleError (schedule/__init__.py:53-56)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  },
+  {
+    "question_id": "q_ans_50",
+    "question_type": "where_defined",
+    "target_symbol": "ScheduleValueError",
+    "target_file": "schedule/__init__.py",
+    "relevant_lines": [
+      20,
+      25
+    ],
+    "resolved": [
+      "schedule.ScheduleValueError (schedule/__init__.py:59-62)"
+    ],
+    "lines_overlap": false,
+    "note": ""
+  }
+]

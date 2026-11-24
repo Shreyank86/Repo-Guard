@@ -19,7 +19,9 @@ from pydantic import BaseModel, ConfigDict, Field
 # 1. Repository intelligence & retrieval  (owner: Member 1)
 # =============================================================================
 
-INDEX_SCHEMA_VERSION = "1.0"
+INDEX_SCHEMA_VERSION = "1.1"
+"""1.1 (Phase 2): index_id, tool versions, passage content hashes, evidence provenance."""
+COMPATIBLE_INDEX_VERSIONS: tuple[str, ...] = ("1.1",)
 
 MODULE_SCOPE = "<module>"
 """Pseudo symbol name used as the caller for calls made at module top level."""
@@ -178,13 +180,19 @@ class Passage(_Model):
     header: str = ""
     """One-line context (path, symbol, signature) prepended for embedding."""
     content: str
+    content_sha256: str = ""
+    """sha256 of ``content`` (UTF-8); lets evidence be checked against the passage it came from."""
 
     def embedding_text(self) -> str:
         return f"{self.header}\n{self.content}" if self.header else self.content
 
 
 class Evidence(_Model):
+    """One retrieved passage with full provenance (Phase 2 evidence contract)."""
+
     evidence_id: str
+    """Stable id: ``ev_`` + 16 hex of sha256(index_id | passage_id | content_sha256).
+    Identical for the same passage of the same index, across runs and reloads."""
     passage_id: str
     file_path: str
     start_line: int
@@ -192,7 +200,129 @@ class Evidence(_Model):
     snippet: str
     similarity_score: float = Field(ge=0.0, le=1.0)
     associated_symbol: str | None = None
+    """Qualified symbol the passage belongs to (``None`` for module overviews)."""
     rank: int = 1
+    passage_type: str | None = None
+    part: int = 1
+    total_parts: int = 1
+    content_sha256: str = ""
+    approx_tokens: int = 0
+    """Approximate token count of ``snippet`` (characters / 4, rounded up)."""
+    index_id: str = ""
+    repository_id: str = ""
+    commit: str | None = None
+    source_url: str | None = None
+    """Permalink to the exact lines at the pinned commit when the source is on GitHub."""
+    rank_score: float | None = None
+    """Score used for ordering: cosine plus any symbol boosts (``None`` when not ranked)."""
+
+
+class SearchFilters(_Model):
+    """Metadata filters applied before top-k selection. All given filters must match."""
+
+    path_prefix: str | None = None
+    """Repository-relative POSIX prefix, e.g. ``schedule/`` or ``src/requests/api.py``."""
+    path_glob: str | None = None
+    """fnmatch pattern on the repository-relative path, e.g. ``*/models.py``."""
+    passage_types: list[Literal["function", "method", "class", "module"]] | None = None
+    symbol: str | None = None
+    """Short or qualified symbol name; matches the passage symbol or its qualified suffix."""
+    exclude_tests: bool = False
+    """Drop files under ``test``/``tests`` directories or named ``test_*.py`` / ``*_test.py``."""
+
+
+class RetrievalDiagnostics(_Model):
+    query_chars: int = 0
+    k_requested: int = 0
+    candidates: int = 0
+    """Passages left after filtering (the pool top-k was taken from)."""
+    returned: int = 0
+    duplicates_removed: int = 0
+    below_min_score: int = 0
+    empty: bool = True
+    top1_score: float = 0.0
+    retrieved_tokens: int = 0
+    latency_ms: float = 0.0
+    backend: str = ""
+    vector_store: str = ""
+
+
+class SearchResult(_Model):
+    query: str
+    evidence: list[Evidence] = Field(default_factory=list)
+    diagnostics: RetrievalDiagnostics = Field(default_factory=RetrievalDiagnostics)
+    filters: SearchFilters | None = None
+
+
+class FreshnessReport(_Model):
+    """Whether an index still matches the repository checkout it was built from."""
+
+    index_id: str
+    stale: bool
+    indexed_commit: str | None = None
+    current_commit: str | None = None
+    commit_changed: bool = False
+    changed_files: list[str] = Field(default_factory=list)
+    added_files: list[str] = Field(default_factory=list)
+    removed_files: list[str] = Field(default_factory=list)
+
+
+class FreeSignals(_Model):
+    """Retrieval-derived RL state signals (owner: Member 1). See docs/state_signals.md.
+
+    The first six fields map one-to-one onto ``StateVector``; the rest are extra,
+    documented diagnostics the environment may use or log.
+    """
+
+    # --- StateVector "free" group (all in [0, 1]) ---
+    symbol_found: float = 0.0
+    name_similarity: float = 0.0
+    retr_top1: float = 0.0
+    retr_margin: float = 0.0
+    passage_mentions_symbol: float = 0.0
+    stack_match: float = 0.0
+
+    # --- extended signals (all in [0, 1]) ---
+    has_named_symbol: float = 0.0
+    """Availability flag: 1 if the question names at least one code symbol."""
+    has_named_file: float = 0.0
+    file_found: float = 0.0
+    """1 if every file named in the question exists in the index (0 if none named)."""
+    symbol_in_named_file: float = 0.0
+    """1 if a found symbol is defined in a named file (catches wrong-path traps)."""
+    evidence_count: float = 0.0
+    """Results at or above ``min_evidence_score``, divided by k."""
+    source_diversity: float = 0.0
+    """Distinct files among returned evidence / number of returned evidence."""
+    coverage: float = 0.0
+    """Share of found named symbols that have a passage in the top-k evidence."""
+    missing_evidence: float = 1.0
+    """1 if no evidence reaches ``min_evidence_score`` or a found symbol is not covered."""
+    vocab_overlap: float = 0.0
+    """Share of the question's content words that occur in the repository vocabulary."""
+    retrieved_tokens: float = 0.0
+    """Approx. tokens in returned evidence / token budget reference (clipped to 1)."""
+
+    # --- context (not numeric features) ---
+    named_symbols: list[str] = Field(default_factory=list)
+    named_files: list[str] = Field(default_factory=list)
+    nearest_symbol: str | None = None
+    nearest_symbol_file: str | None = None
+    evidence_ids: list[str] = Field(default_factory=list)
+
+    def state_fields(self) -> dict[str, float]:
+        """The six values to copy into ``StateVector``."""
+        return {
+            k: getattr(self, k)
+            for k in (
+                "symbol_found", "name_similarity", "retr_top1",
+                "retr_margin", "passage_mentions_symbol", "stack_match",
+            )
+        }  # fmt: skip
+
+    def feature_vector(self) -> dict[str, float]:
+        """All numeric signals (state fields + extended), in a fixed order."""
+        return {k: v for k, v in self.model_dump().items() if isinstance(v, float)}
 
 
 class RepositoryMetadata(_Model):
@@ -215,6 +345,9 @@ class IndexArtifacts(_Model):
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     schema_version: str = INDEX_SCHEMA_VERSION
+    index_id: str = ""
+    """``<repository_id>@<commit12>-<config8>``: changes when the snapshot or index config changes."""
+    tool_versions: dict[str, str] = Field(default_factory=dict)
     output_dir: str
     symbols_path: str
     callgraph_path: str

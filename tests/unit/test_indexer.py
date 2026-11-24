@@ -27,6 +27,7 @@ def test_writes_all_artefacts_with_documented_top_level_keys(built):
     symbols = json.loads((out / SYMBOLS_FILE).read_text())
     assert list(symbols) == [
         "schema_version",
+        "index_id",
         "repository",
         "files",
         "symbols",
@@ -35,7 +36,7 @@ def test_writes_all_artefacts_with_documented_top_level_keys(built):
     ]
     assert symbols["schema_version"] == INDEX_SCHEMA_VERSION
     callgraph = json.loads((out / CALLGRAPH_FILE).read_text())
-    assert list(callgraph) == ["schema_version", "repository_id", "edges"]
+    assert list(callgraph) == ["schema_version", "index_id", "repository_id", "edges"]
     assert set(callgraph["edges"][0]) == {
         "caller", "caller_name", "callee", "callee_expr", "callee_qualified", "resolution", "file", "line", "col",
     }  # fmt: skip
@@ -105,7 +106,8 @@ def test_two_runs_produce_byte_identical_output(fixture_repo, tmp_path):
     b = build_index(fixture_repo, tmp_path / "b", cfg)
     names = sorted(p.name for p in Path(a.output_dir).iterdir())
     assert names == sorted(p.name for p in Path(b.output_dir).iterdir())
-    for name in names:
+    assert "build_info.json" in names  # the one intentionally non-deterministic file
+    for name in [n for n in names if n != "build_info.json"]:
         assert (Path(a.output_dir) / name).read_bytes() == (
             Path(b.output_dir) / name
         ).read_bytes(), name
@@ -113,10 +115,13 @@ def test_two_runs_produce_byte_identical_output(fixture_repo, tmp_path):
 
 def test_rebuild_in_place_is_stable_and_removes_stale_vectors(fixture_repo, tmp_path):
     out = tmp_path / "idx"
-    build_index(fixture_repo, out, {"embeddings": {"enabled": True, "backend": "hashing"}})
+    cfg = {"embeddings": {"enabled": True, "backend": "hashing"}}
+    first_art = build_index(fixture_repo, out, cfg)
     first = (out / SYMBOLS_FILE).read_bytes()
-    build_index(fixture_repo, out)
+    assert build_index(fixture_repo, out, cfg).index_id == first_art.index_id
     assert (out / SYMBOLS_FILE).read_bytes() == first
+    plain = build_index(fixture_repo, out)  # different config -> different index id
+    assert plain.index_id != first_art.index_id
     assert not (out / "vector_meta.json").exists()
     assert not list(out.glob("*.tmp"))
 
@@ -305,3 +310,95 @@ def test_load_index_rejects_other_schema_version(built):
     p.write_text(json.dumps(doc))
     with pytest.raises(IndexNotFoundError):
         load_index(built.output_dir)
+
+
+# ---- Phase 2: index metadata, freshness, robustness ------------------------------
+
+
+def test_manifest_records_index_metadata(built):
+    manifest = json.loads(Path(built.manifest_path).read_text())
+    assert manifest["index_id"] == built.index_id
+    assert (
+        built.index_id.startswith("indexer-repo@nocommit-")
+        and len(built.index_id.split("-")[-1]) == 8
+    )
+    tv = manifest["tool_versions"]
+    assert {"repoguard", "index_schema", "indexer", "python", "parser", "numpy"} <= set(tv)
+    assert tv["index_schema"] == INDEX_SCHEMA_VERSION
+    info = json.loads((Path(built.output_dir) / "build_info.json").read_text())
+    assert info["index_id"] == built.index_id and info["built_at"].endswith("+00:00")
+    assert "build_info.json" not in manifest["artefacts"]
+    assert all(p.content_sha256 for p in built.passages)
+
+
+def test_embedding_versions_recorded(fixture_repo, tmp_path):
+    art = build_index(
+        fixture_repo, tmp_path / "e", {"embeddings": {"enabled": True, "backend": "hashing"}}
+    )
+    tv = json.loads(Path(art.manifest_path).read_text())["tool_versions"]
+    assert tv["embedding_backend"] == "hashing" and tv["embedding_model"] == "hashing-512"
+
+
+def test_index_id_tracks_commit_and_config(fixture_repo, tmp_path):
+    a = build_index(fixture_repo, tmp_path / "a", {"repository": {"commit": "a" * 40}})
+    b = build_index(fixture_repo, tmp_path / "b", {"repository": {"commit": "b" * 40}})
+    c = build_index(
+        fixture_repo, tmp_path / "c", {"repository": {"commit": "a" * 40}, "exclude_globs": ["x"]}
+    )
+    d = build_index(
+        fixture_repo,
+        tmp_path / "d",
+        {"repository": {"commit": "a" * 40, "name": "renamed-but-same"}},
+    )
+    assert a.index_id.startswith("indexer-repo@aaaaaaaaaaaa-")
+    assert len({a.index_id, b.index_id, c.index_id}) == 3
+    assert (
+        d.index_id.split("@")[1] == a.index_id.split("@")[1]
+    )  # provenance overrides don't change the config hash
+
+
+def test_load_index_rejects_mixed_builds(built):
+    p = Path(built.callgraph_path)
+    doc = json.loads(p.read_text())
+    doc["index_id"] = "someone-else@x-00000000"
+    p.write_text(json.dumps(doc))
+    with pytest.raises(IndexNotFoundError):
+        load_index(built.output_dir)
+
+
+def test_freshness_detects_changes(tmp_repo, tmp_path):
+    from repoguard.repository.indexer import check_freshness
+
+    art = build_index(tmp_repo, tmp_path / "i")
+    fresh = check_freshness(art)
+    assert not fresh.stale and fresh.index_id == art.index_id
+    (tmp_repo / "pkg" / "utils.py").write_text("def helper(value):\n    return value + 1\n")
+    (tmp_repo / "pkg" / "new.py").write_text("x = 1\n")
+    (tmp_repo / "pkg" / "__init__.py").unlink()
+    report = check_freshness(art, tmp_repo)
+    assert report.stale
+    assert (report.changed_files, report.added_files, report.removed_files) == (
+        ["pkg/utils.py"], ["pkg/new.py"], ["pkg/__init__.py"],
+    )  # fmt: skip
+
+
+def test_hidden_directories_skipped_by_default(tmp_repo, tmp_path):
+    (tmp_repo / ".github").mkdir()
+    (tmp_repo / ".github" / "bench.py").write_text("def bench():\n    pass\n")
+    default = build_index(tmp_repo, tmp_path / "a")
+    assert ".github/bench.py" not in default.file_paths()
+    hidden = build_index(tmp_repo, tmp_path / "b", {"include_hidden_dirs": True})
+    assert ".github/bench.py" in hidden.file_paths()
+
+
+def test_committed_fixture_index_is_current(tmp_path, monkeypatch):
+    """tests/fixtures/indexes/indexer_repo must match a fresh build (rebuild it if this fails)."""
+    fixtures = Path(__file__).resolve().parents[1] / "fixtures"
+    root = fixtures.parents[1]
+    monkeypatch.chdir(root)
+    committed = fixtures / "indexes" / "indexer_repo"
+    cfg = {"embeddings": {"enabled": True, "backend": "hashing", "vector_store": "numpy"}}
+    fresh = build_index("tests/fixtures/indexer_repo", tmp_path / "fresh", cfg)
+    for name in ("symbols.json", "callgraph.json", "passages.jsonl"):
+        assert (committed / name).read_bytes() == (Path(fresh.output_dir) / name).read_bytes(), name
+    assert load_index(committed).index_id == fresh.index_id

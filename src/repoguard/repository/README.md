@@ -1,6 +1,6 @@
 # Repository Intelligence Module (`src/repoguard/repository/`)
 
-**Owner: Member 1 (Repository Intelligence Engineer)** · **Branch: `feature/indexer`**
+**Owner: Member 1 (Repository Intelligence Engineer)** · Phase 1: `feature/indexer` (PR #1) · Phase 2: `feature/retrieval-phase2`
 
 Converts a Python repository into a structured, searchable index (symbols, imports, static call graph, passages, vectors) that the verifier, baseline and RL agent consume. Repository code is **parsed, never imported or executed**.
 
@@ -14,8 +14,8 @@ Output format and field meanings: **[`docs/index_schema.md`](../../../docs/index
 | `callgraph.py` | Two-pass static call graph: builds a repo-wide symbol table, then records every call site with caller, callee, location and a `resolution` label (`local`, `imported`, `method`, `module_attribute`, `external`, `builtin`, `unresolved`) |
 | `passage_builder.py` | Function/method passages (exact source), class and module overview passages (bodies elided), long passages split with overlap |
 | `indexer.py` | `build_index()` orchestration, deterministic JSON/JSONL serialization, manifest with provenance and hashes; `load_index()` |
-| `../retrieval/embedder.py` | `SentenceTransformerEmbedder` (all-MiniLM-L6-v2) and deterministic `HashingEmbedder` fallback |
-| `../retrieval/search.py` | FAISS `IndexFlatIP` (NumPy fallback) build/load, `search(question, index, k) -> list[Evidence]` |
+| `indexer.py` (Phase 2) | `index_id`, tool versions, `build_info.json`, passage content hashes, `check_freshness()` for stale indexes |
+| `../retrieval/` | Retriever, evidence contract, RL free signals, retrieval metrics: see `src/repoguard/retrieval/README.md` |
 
 ## Usage
 
