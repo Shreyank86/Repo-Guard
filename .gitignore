@@ -66,6 +66,12 @@ mlruns/
 *.pth
 *.onnx
 checkpoints/
+data/checkpoints/
+data/cache/*
+!data/cache/.gitkeep
+data/episodes/*
+!data/episodes/.gitkeep
+data/baseline/*.jsonl
 
 # Hugging Face model cache
 *.safetensors

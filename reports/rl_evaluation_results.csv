@@ -1,0 +1,7 @@
+Policy,Split,Lambda,Cases,Coverage (%),Hallucination Rate (%),Accuracy on Answered (%),Correct Abstention (%),Mean Tokens / Query,Mean Steps
+DQN,validation,0.25,12,0.0,0.0,0.0,100.0,268.4,3.58
+DQN,validation,0.5,12,0.0,0.0,0.0,100.0,268.4,3.58
+DQN,validation,1.0,12,0.0,0.0,0.0,100.0,268.4,3.58
+DQN,validation,2.0,12,0.0,0.0,0.0,100.0,268.4,3.58
+DQN,validation,3.0,12,0.0,0.0,0.0,100.0,826.2,4.0
+DQN,validation,5.0,12,0.0,0.0,0.0,100.0,826.2,4.0
