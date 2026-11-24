@@ -1,0 +1,141 @@
+{
+  "commit": "4fbc6ff07215367ece731006855e732d1405992c",
+  "cases": [
+    {
+      "id": "dotenv-python-file",
+      "claim": {"type": "file_exists", "file": "src/dotenv/main.py"},
+      "supported": true,
+      "source_check": "The pinned Git tree contains src/dotenv/main.py.",
+      "expected_status": "verified",
+      "expected_reason_code": "file_indexed"
+    },
+    {
+      "id": "dotenv-readme",
+      "claim": {"type": "file_exists", "file": "README.md"},
+      "supported": true,
+      "source_check": "The pinned Git tree contains README.md, which is outside the Python index.",
+      "expected_status": "unverifiable",
+      "expected_reason_code": "file_unindexed"
+    },
+    {
+      "id": "dotenv-file-near-miss",
+      "claim": {"type": "file_exists", "file": "src/dotenv/load.py"},
+      "supported": false,
+      "source_check": "The pinned Git tree contains no src/dotenv/load.py.",
+      "expected_status": "unverifiable",
+      "expected_reason_code": "file_unindexed"
+    },
+    {
+      "id": "dotenv-unsafe-path",
+      "claim": {"type": "file_exists", "file": "src/dotenv/../../README.md"},
+      "supported": null,
+      "source_check": "The assertion supplies a parent-directory reference instead of a canonical index path.",
+      "expected_status": "unverifiable",
+      "expected_reason_code": "invalid_path"
+    },
+    {
+      "id": "dotenv-class-definition",
+      "claim": {"type": "class_exists", "symbol": "DotEnv", "file": "src/dotenv/main.py"},
+      "supported": true,
+      "source_check": "src/dotenv/main.py:42 defines class DotEnv.",
+      "expected_status": "verified",
+      "expected_reason_code": "definition_found"
+    },
+    {
+      "id": "dotenv-main-loader",
+      "claim": {"type": "function_exists", "symbol": "dotenv.main.load_dotenv", "file": "src/dotenv/main.py"},
+      "supported": true,
+      "source_check": "src/dotenv/main.py:431 begins the load_dotenv definition.",
+      "expected_status": "verified",
+      "expected_reason_code": "definition_found"
+    },
+    {
+      "id": "dotenv-unspecified-definition-kind",
+      "claim": {"type": "symbol_exists", "symbol": "DotEnv", "file": "src/dotenv/main.py"},
+      "supported": true,
+      "source_check": "src/dotenv/main.py:42 defines DotEnv as a class, satisfying a function-or-class claim.",
+      "expected_status": "verified",
+      "expected_reason_code": "definition_found"
+    },
+    {
+      "id": "dotenv-wrong-definition-file",
+      "claim": {"type": "function_exists", "symbol": "load_dotenv", "file": "src/dotenv/parser.py"},
+      "supported": false,
+      "source_check": "src/dotenv/parser.py contains parsing helpers and no load_dotenv definition.",
+      "expected_status": "refuted",
+      "expected_reason_code": "definition_absent"
+    },
+    {
+      "id": "dotenv-override-parameter",
+      "claim": {"type": "parameter_exists", "symbol": "dotenv.main.load_dotenv", "parameter": "override"},
+      "supported": true,
+      "source_check": "src/dotenv/main.py:431-438 declares override in the signature.",
+      "expected_status": "verified",
+      "expected_reason_code": "parameter_declared"
+    },
+    {
+      "id": "dotenv-fake-parameter",
+      "claim": {"type": "parameter_exists", "symbol": "dotenv.main.load_dotenv", "parameter": "timeout"},
+      "supported": false,
+      "source_check": "The signature on src/dotenv/main.py:431-438 has no declared timeout parameter.",
+      "expected_status": "refuted",
+      "expected_reason_code": "parameter_absent"
+    },
+    {
+      "id": "dotenv-ambiguous-constructor",
+      "claim": {"type": "parameter_exists", "symbol": "__init__", "parameter": "stream"},
+      "supported": null,
+      "source_check": "DotEnv and Reader both have __init__ definitions. Position also has a constructor with different parameters.",
+      "expected_status": "unverifiable",
+      "expected_reason_code": "ambiguous_symbol"
+    },
+    {
+      "id": "dotenv-resolved-loader-call",
+      "claim": {"type": "calls", "caller": "dotenv.main.load_dotenv", "callee": "dotenv.main.find_dotenv"},
+      "supported": true,
+      "source_check": "load_dotenv directly calls find_dotenv when dotenv_path and stream are both absent.",
+      "expected_status": "verified",
+      "expected_reason_code": "call_resolved"
+    },
+    {
+      "id": "dotenv-reversed-call",
+      "claim": {"type": "calls", "caller": "dotenv.main.find_dotenv", "callee": "dotenv.main.load_dotenv"},
+      "supported": false,
+      "source_check": "find_dotenv on src/dotenv/main.py:376-428 has no call to load_dotenv.",
+      "expected_status": "refuted",
+      "expected_reason_code": "call_absent"
+    },
+    {
+      "id": "dotenv-imported-call",
+      "claim": {"type": "calls", "caller": "DotEnv.parse", "callee": "dotenv.parser.parse_stream"},
+      "supported": true,
+      "source_check": "src/dotenv/main.py:12 imports parse_stream and line 97 calls it from DotEnv.parse.",
+      "expected_status": "verified",
+      "expected_reason_code": "call_resolved"
+    },
+    {
+      "id": "dotenv-relative-import",
+      "claim": {"type": "imports", "file": "src/dotenv/main.py", "module": "dotenv.parser.parse_stream"},
+      "supported": true,
+      "source_check": "src/dotenv/main.py:12 explicitly imports parse_stream from .parser.",
+      "expected_status": "verified",
+      "expected_reason_code": "import_found"
+    },
+    {
+      "id": "dotenv-import-near-miss",
+      "claim": {"type": "imports", "file": "src/dotenv/main.py", "module": "dotenv.parser.prase_stream"},
+      "supported": false,
+      "source_check": "The import spells the symbol parse_stream. There is no prase_stream import in the file.",
+      "expected_status": "refuted",
+      "expected_reason_code": "import_absent"
+    },
+    {
+      "id": "dotenv-semantic-behavior",
+      "claim": {"type": "semantic", "statement": "Loading dotenv variables is safe under arbitrary concurrent callers."},
+      "supported": null,
+      "source_check": "This is a concurrency guarantee. The structural index does not establish it.",
+      "expected_status": "unverifiable",
+      "expected_reason_code": "semantic_claim"
+    }
+  ]
+}

@@ -5,6 +5,7 @@ from repoguard.verification.models import (
     Claim,
     ClaimType,
     ClaimVerdict,
+    ReasonCode,
     VerdictStatus,
     VerificationResult,
 )
@@ -14,6 +15,7 @@ __all__ = [
     "Claim",
     "ClaimType",
     "ClaimVerdict",
+    "ReasonCode",
     "VerificationResult",
     "VerdictStatus",
     "extract_claims",

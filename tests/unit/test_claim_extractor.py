@@ -62,6 +62,5 @@ def test_extracts_markdown_bullet_and_compound_roles() -> None:
     assert extract_claims(text) == [
         Claim(type=ClaimType.FUNCTION_EXISTS, symbol="every", file="schedule/__init__.py"),
         Claim(type=ClaimType.CLASS_EXISTS, symbol="Job", file="schedule/__init__.py"),
-        Claim(type=ClaimType.FUNCTION_EXISTS, symbol="run_pending", file="schedule/__init__.py"),
+        Claim(type=ClaimType.SYMBOL_EXISTS, symbol="run_pending", file="schedule/__init__.py"),
     ]
-

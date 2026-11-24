@@ -1,6 +1,7 @@
 """Deterministic checks against the successfully indexed Python source."""
 
 from collections.abc import Mapping, Sequence
+from pathlib import PureWindowsPath
 
 from pydantic import ValidationError
 
@@ -10,11 +11,18 @@ from repoguard.verification.models import (
     ClaimEvidence,
     ClaimType,
     ClaimVerdict,
+    ReasonCode,
     VerdictStatus,
     VerificationResult,
 )
 
 IndexedSymbol = ClassMetadata | FunctionMetadata
+_DEFINITION_TYPES: dict[ClaimType, type[IndexedSymbol] | None] = {
+    ClaimType.CLASS_EXISTS: ClassMetadata,
+    ClaimType.FUNCTION_EXISTS: FunctionMetadata,
+    ClaimType.PARAMETER_EXISTS: FunctionMetadata,
+    ClaimType.SYMBOL_EXISTS: None,
+}
 
 
 def _find_symbols(
@@ -51,26 +59,29 @@ def _definition_missing(claim: Claim, index: IndexArtifacts) -> ClaimVerdict:
             claim=claim,
             status=VerdictStatus.REFUTED,
             reason="No matching definition in the indexed source.",
+            reason_code=ReasonCode.DEFINITION_ABSENT,
         )
     return ClaimVerdict(
         claim=claim,
         status=VerdictStatus.UNVERIFIABLE,
         reason="No matching definition in the available index, which is incomplete or empty.",
+        reason_code=ReasonCode.INCOMPLETE_INDEX,
     )
 
 
 def _check_definition(claim: Claim, index: IndexArtifacts) -> ClaimVerdict:
-    symbol_type = ClassMetadata if claim.type == ClaimType.CLASS_EXISTS else FunctionMetadata
-    matches = _find_symbols(index, claim.symbol, claim.file, symbol_type)
+    matches = _find_symbols(index, claim.symbol, claim.file, _DEFINITION_TYPES[claim.type])
     if not matches:
         return _definition_missing(claim, index)
 
+    code = ReasonCode.DEFINITION_FOUND
     if claim.type == ClaimType.PARAMETER_EXISTS:
         if len(matches) != 1:
             return ClaimVerdict(
                 claim=claim,
                 status=VerdictStatus.UNVERIFIABLE,
                 reason="The parameter claim matches multiple definitions. Qualify the symbol.",
+                reason_code=ReasonCode.AMBIGUOUS_SYMBOL,
             )
         function = matches[0]
         if isinstance(function, FunctionMetadata) and claim.parameter not in function.parameters:
@@ -78,12 +89,15 @@ def _check_definition(claim: Claim, index: IndexArtifacts) -> ClaimVerdict:
                 claim=claim,
                 status=VerdictStatus.REFUTED,
                 reason="The indexed signature does not declare that parameter.",
+                reason_code=ReasonCode.PARAMETER_ABSENT,
             )
+        code = ReasonCode.PARAMETER_DECLARED
 
     return ClaimVerdict(
         claim=claim,
         status=VerdictStatus.VERIFIED,
         reason="The indexed definition supports the claim.",
+        reason_code=code,
         evidence=[
             ClaimEvidence(
                 file=symbol.file,
@@ -107,6 +121,7 @@ def _check_call(claim: Claim, index: IndexArtifacts) -> ClaimVerdict:
             claim=claim,
             status=VerdictStatus.UNVERIFIABLE,
             reason="The caller or callee matches multiple definitions. Use a qualified name.",
+            reason_code=ReasonCode.AMBIGUOUS_SYMBOL,
         )
 
     caller = callers[0]
@@ -134,12 +149,14 @@ def _check_call(claim: Claim, index: IndexArtifacts) -> ClaimVerdict:
             claim=claim,
             status=VerdictStatus.UNVERIFIABLE,
             reason="The name could refer to multiple resolved call targets.",
+            reason_code=ReasonCode.AMBIGUOUS_SYMBOL,
         )
     if matching_edges:
         return ClaimVerdict(
             claim=claim,
             status=VerdictStatus.VERIFIED,
             reason="The call graph contains a resolved edge in the claimed direction.",
+            reason_code=ReasonCode.CALL_RESOLVED,
             evidence=[
                 ClaimEvidence(file=edge.file, line=edge.line, qualified_name=edge.callee_qualified)
                 for edge in matching_edges
@@ -153,11 +170,13 @@ def _check_call(claim: Claim, index: IndexArtifacts) -> ClaimVerdict:
             claim=claim,
             status=VerdictStatus.UNVERIFIABLE,
             reason="A possible call site has an unresolved target.",
+            reason_code=ReasonCode.UNRESOLVED_CALL,
         )
     return ClaimVerdict(
         claim=claim,
         status=VerdictStatus.REFUTED,
         reason="The indexed static call graph has no matching edge from the caller.",
+        reason_code=ReasonCode.CALL_ABSENT,
     )
 
 
@@ -178,24 +197,53 @@ def _check_import(claim: Claim, index: IndexArtifacts) -> ClaimVerdict:
             if evidence
             else "The indexed file has no matching explicit import."
         ),
+        reason_code=ReasonCode.IMPORT_FOUND if evidence else ReasonCode.IMPORT_ABSENT,
         evidence=evidence,
     )
 
 
 def _verify_claim(claim: Claim, index: IndexArtifacts) -> ClaimVerdict:
-    if claim.file is not None:
-        file = next((record for record in index.files if record.path == claim.file), None)
-        if file is None or file.parse_status != "ok":
+    if claim.type == ClaimType.SEMANTIC:
+        return ClaimVerdict(
+            claim=claim,
+            status=VerdictStatus.UNVERIFIABLE,
+            reason="The source index can check structural facts, but this assertion is semantic.",
+            reason_code=ReasonCode.SEMANTIC_CLAIM,
+        )
+    if (path := claim.file) is not None:
+        if (
+            "\\" in path
+            or "\x00" in path
+            or PureWindowsPath(path).drive
+            or {"", ".", ".."}.intersection(path.split("/"))
+        ):
             return ClaimVerdict(
                 claim=claim,
                 status=VerdictStatus.UNVERIFIABLE,
-                reason="The claimed file has no successfully parsed entry in the index.",
+                reason="Use a canonical repository-relative POSIX path.",
+                reason_code=ReasonCode.INVALID_PATH,
+            )
+        file = next((record for record in index.files if record.path == path), None)
+        if file is None:
+            return ClaimVerdict(
+                claim=claim,
+                status=VerdictStatus.UNVERIFIABLE,
+                reason="The claimed file is outside the available Python index.",
+                reason_code=ReasonCode.FILE_UNINDEXED,
+            )
+        if file.parse_status != "ok":
+            return ClaimVerdict(
+                claim=claim,
+                status=VerdictStatus.UNVERIFIABLE,
+                reason="The claimed file could not be parsed successfully.",
+                reason_code=ReasonCode.FILE_PARSE_ERROR,
             )
         if claim.type == ClaimType.FILE_EXISTS:
             return ClaimVerdict(
                 claim=claim,
                 status=VerdictStatus.VERIFIED,
                 reason="The file is present in the Python index.",
+                reason_code=ReasonCode.FILE_INDEXED,
                 evidence=[ClaimEvidence(file=file.path)],
             )
     if claim.type == ClaimType.CALLS:
@@ -207,7 +255,9 @@ def _verify_claim(claim: Claim, index: IndexArtifacts) -> ClaimVerdict:
 
 def _unsupported_name(verdict: ClaimVerdict) -> str | None:
     claim = verdict.claim
-    if claim is None or verdict.status == VerdictStatus.VERIFIED:
+    if claim is None or (
+        verdict.status == VerdictStatus.VERIFIED or claim.type == ClaimType.SEMANTIC
+    ):
         return None
     if verdict.status == VerdictStatus.UNVERIFIABLE and claim.file is not None:
         return claim.file
@@ -228,6 +278,7 @@ def verify(
                     claim=None,
                     status=VerdictStatus.UNVERIFIABLE,
                     reason="Malformed or unsupported claim.",
+                    reason_code=ReasonCode.INVALID_CLAIM,
                 )
             )
         else:

@@ -86,3 +86,6 @@ scratch/
 
 # per-case retrieval eval dumps (regenerate with: make retrieval-eval)
 reports/retrieval/*_cases.jsonl
+
+# Phase 2 run predictions and evaluation output
+experiments/results/phase2/
