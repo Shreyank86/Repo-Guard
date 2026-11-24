@@ -23,6 +23,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
+from repoguard.agent.cache import OperationCache
 from repoguard.agent.environment import RepoGuardEnv, ACTION_LOOKUP
 from repoguard.agent.policy import RepoGuardPolicy
 from repoguard.evaluation.benchmark import load_benchmark
@@ -69,6 +70,12 @@ def evaluate() -> None:
         help="Path to output summary CSV",
     )
     parser.add_argument(
+        "--cache-db",
+        type=Path,
+        default=ROOT / "data/cache/operations.db",
+        help="Path to SQLite operation cache file",
+    )
+    parser.add_argument(
         "--mock",
         action=argparse.BooleanOptionalAction,
         default=True,
@@ -91,8 +98,9 @@ def evaluate() -> None:
     repo_names = {c.repository_id for c in cases}
     indexes: dict[str, IndexArtifacts] = {name: load_index(args.indexes / name) for name in repo_names}
 
+    cache = OperationCache(db_path=args.cache_db)
     llm = LLMService(mock_mode=args.mock)
-    env = RepoGuardEnv(benchmark_cases=cases, indexes=indexes, llm_service=llm)
+    env = RepoGuardEnv(benchmark_cases=cases, indexes=indexes, llm_service=llm, cache=cache)
 
     results_rows = []
 

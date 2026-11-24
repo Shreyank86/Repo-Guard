@@ -39,7 +39,12 @@ class OperationCache:
         self._misses = 0
 
     def _get_connection(self) -> sqlite3.Connection:
-        return sqlite3.connect(str(self.db_path), timeout=30.0)
+        conn = sqlite3.connect(str(self.db_path), timeout=60.0)
+        try:
+            conn.execute("PRAGMA journal_mode = DELETE")
+        except Exception:
+            pass
+        return conn
 
     def _init_db(self) -> None:
         with self._get_connection() as conn:

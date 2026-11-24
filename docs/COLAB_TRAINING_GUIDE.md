@@ -1,70 +1,73 @@
 # Google Colab Training & Cloud Execution Guide (Member 3)
 
 > **Workstream:** Member 3 — RL Agent Development, Training, Evaluation & Model Integration  
-> **Target Environment:** Google Colab (Free T4 GPU or Colab Pro) + Google Drive Checkpoint Persistence  
+> **Target Environment:** Google Colab (Free T4 GPU or Colab Pro) + Google Drive Persistence  
 > **Primary Notebook:** [`notebooks/01_train_colab.ipynb`](../notebooks/01_train_colab.ipynb)  
+> **Repository:** `https://github.com/Shreyank86/Repo-Guard`  
 > **Core Architecture:**
 > - **Action Space:** Canonical 6 actions (`SEARCH`, `INSPECT`, `VERIFY`, `ANSWER`, `ANSWER_WITH_EVIDENCE`, `ABSTAIN`)
 > - **Observation Space:** 18-dimensional normalized state vector ($s \in [0, 1]^{18}$)
-> - **Reward Function:** Dynamic risk-conditioned formula $r = R_{\text{final}}(\lambda) - 0.2 \cdot \frac{T}{2000} - 0.01 \cdot n$ where $\lambda \in [0.25, 5.0]$
+> - **Dynamic Risk Penalty:** $\lambda \in [0.25, 5.0]$
+> - **Reward Formula:** $r = R_{\text{final}}(\lambda) - 0.2 \cdot \frac{T}{2000} - 0.01 \cdot n$
+> - **Evaluation Splits:** `train` (36 cases), `validation` (12 cases), `test` (12 cases)
 
 ---
 
 ## 1. Overview & Cloud Architecture
 
-All core engineering, environments, policies, caches, and test suites are built and verified locally on Windows. Google Colab is used exclusively for:
-1. **Accelerated Multi-Episode Training:** Running 2,000 episodes for Deep Q-Network (DQN) and 1,500 episodes for REINFORCE.
-2. **Persistent Checkpoints:** Writing model weights, optimizer states, replay buffers, and metrics directly to Google Drive so no training progress is lost upon Colab disconnect.
-3. **Multi-Risk Evaluation:** Evaluating policies across risk tolerance penalties ($\lambda \in \{0.25, 0.5, 1.0, 2.0, 3.0, 5.0\}$) and generating high-resolution risk curves.
+All core engineering, environments, policies, caches, and test suites are developed and verified locally on Windows. Google Colab is used for:
+1. **Accelerated Multi-Episode Training:** 2,000 episodes for Deep Q-Network (DQN) and 1,500 episodes for REINFORCE.
+2. **Persistent Checkpoints & Auto-Resume:** All checkpoints are saved directly to Google Drive. If Colab disconnects overnight, re-running the training cell automatically detects the latest checkpoint and resumes seamlessly from where it stopped.
+3. **Persistent Indexes & SQLite Cache:** Repository vector indexes and the SQLite operation cache (`operations.db`) are saved to Drive so they are never rebuilt or recomputed twice.
+4. **Academic Split Evaluation:** Separate validation evaluations (`val_dqn.csv`) and unpolluted held-out test evaluations (`test_dqn.csv`) across all 6 risk levels ($\lambda \in \{0.25, 0.5, 1.0, 2.0, 3.0, 5.0\}$).
 
 ```
-+-------------------------------------------------------------+
-|                      Google Colab (GPU)                     |
-|                                                             |
-|   1. Clone RepoGuard from GitHub                            |
-|   2. Fetch 5 benchmark repos + build dense vector indexes   |
-|   3. Run train_agent.py (DQN: 2000 eps, REINFORCE: 1500 eps)|
-|   4. Run evaluate_rl.py across lambda levels                |
-+------------------------------+------------------------------+
-                               |
-                               | (Saves models & logs every 50 episodes)
-                               v
-+-------------------------------------------------------------+
-|                  Google Drive Persistent Storage            |
-|                                                             |
-|   /MyDrive/RepoGuard/                                       |
-|   ├── checkpoints/                                          |
-|   │   ├── dqn/dqn_policy_latest.pt                          |
-|   │   └── reinforce/reinforce_policy_latest.pt              |
-|   └── reports/                                              |
-|       ├── eval_dqn.csv                                      |
-|       ├── eval_reinforce.csv                                |
-|       └── risk_curves_comparison.png                        |
-+-------------------------------------------------------------+
++-------------------------------------------------------------------------------------------------+
+|                                    Google Colab (CUDA GPU)                                      |
+|                                                                                                 |
+|   1. Clone Shreyank86/Repo-Guard                                                                |
+|   2. Fetch 5 benchmark repos (symlink indexes from Drive if already built)                      |
+|   3. Run Pre-Training Validation Gate (6 checks before launching training)                      |
+|   4. train_agent.py --algo dqn --auto-resume (DQN: 2000 eps, atomic checkpoints every 50 eps)   |
+|   5. train_agent.py --algo reinforce --auto-resume (REINFORCE: 1500 eps)                       |
+|   6. evaluate_rl.py --split validation & evaluate_rl.py --split test                            |
++-----------------------------------------------+-------------------------------------------------+
+                                                |
+                                                | (Atomic writes every 50 episodes)
+                                                v
++-------------------------------------------------------------------------------------------------+
+|                                  Google Drive Persistent Storage                                |
+|                                                                                                 |
+|   /MyDrive/RepoGuard/                                                                           |
+|   ├── data/                                                                                     |
+|   │   ├── indexes/ (Dense vector indexes for schedule, dotenv, cachetools, tabulate, requests)  |
+|   │   └── cache/operations.db (SQLite cache for SEARCH, INSPECT, VERIFY, LLM outputs)           |
+|   ├── checkpoints/                                                                              |
+|   │   ├── dqn/ (dqn_policy_latest.pt, dqn_checkpoint_ep*.pt, training_history.json)            |
+|   │   └── reinforce/ (reinforce_policy_latest.pt, reinforce_checkpoint_ep*.pt)                 |
+|   └── reports/                                                                                  |
+|       ├── val_dqn.csv & val_reinforce.csv (Validation split evaluation)                        |
+|       ├── test_dqn.csv & test_reinforce.csv (Held-out test split evaluation)                    |
+|       ├── test_risk_curves.png (Publication-quality figures)                                    |
+|       └── experiment_manifest.json (Reproducibility metadata)                                  |
++-------------------------------------------------------------------------------------------------+
 ```
 
 ---
 
-## 2. Step 1: Push Local Work to GitHub
+## 2. Step 1: Push Local Changes to GitHub
 
-Before launching Google Colab, push all local Member 3 implementation work to GitHub.
-
-Open your local terminal in `Repo-Guard` and run:
+From your local Windows terminal in `Repo-Guard`:
 
 ```powershell
 # 1. Review status
 git status
 
-# 2. Stage implementation files (note: large artifacts & caches are auto-ignored by .gitignore)
-git add src/repoguard/agent/
-git add scripts/train_agent.py scripts/evaluate_rl.py scripts/run_episodes.py
-git add tests/unit/test_*.py
-git add notebooks/01_train_colab.ipynb
-git add docs/COLAB_TRAINING_GUIDE.md
-git add requirements.txt IMPLEMENTATION_PLAN.md .gitignore
+# 2. Stage all updated files
+git add .
 
 # 3. Commit
-git commit -m "feat(agent): complete Phase 2 RL agent, environment, tests, and Colab pipeline"
+git commit -m "feat(colab): add auto-resume, pre-flight gate, split evaluation, and persistent Drive caching"
 
 # 4. Push to remote
 git push origin main
@@ -72,180 +75,115 @@ git push origin main
 
 ---
 
-## 3. Step 2: Open Notebook in Google Colab
+## 3. Step 2: Open in Google Colab
 
-You can open the training notebook in Google Colab using either method:
-
-### Method A: Upload File Directly
 1. Navigate to [Google Colab](https://colab.research.google.com/).
-2. Click **Upload** and select `notebooks/01_train_colab.ipynb` from your local machine.
-
-### Method B: Open from GitHub
-1. In [Google Colab](https://colab.research.google.com/), select the **GitHub** tab.
-2. Enter your repository URL (`https://github.com/Shreyank86/Repo-Guard`).
-3. Select `notebooks/01_train_colab.ipynb`.
+2. Click **Upload** and upload `notebooks/01_train_colab.ipynb` from your computer (or select the **GitHub** tab, enter `https://github.com/Shreyank86/Repo-Guard`, and open `notebooks/01_train_colab.ipynb`).
 
 ---
 
 ## 4. Step 3: Configure GPU Runtime
 
-To enable GPU acceleration:
-1. In Google Colab's top menu, click **Runtime** > **Change runtime type**.
-2. Under **Hardware accelerator**, select **T4 GPU** (Standard/Free tier) or **A100 / V100** (Colab Pro).
+1. In Colab's menu: **Runtime** > **Change runtime type**.
+2. Select **T4 GPU** (Free) or **A100 / V100** (Colab Pro).
 3. Click **Save**.
-4. Run the first cell (`!nvidia-smi`) to confirm GPU detection:
-   ```bash
-   +-----------------------------------------------------------------------------------------+
-   | NVIDIA-SMI 535.104.05             Driver Version: 535.104.05   CUDA Version: 12.2       |
-   | GPU  Name                 Persistence-M | Bus-Id        Disp.A | Volatile Uncorr. ECC   |
-   |   0  Tesla T4                       Off | 00000000:00:04.0 Off |                    0   |
-   +-----------------------------------------------------------------------------------------+
+
+---
+
+## 5. Overnight Execution & Browser Keep-Alive
+
+If you plan to let training run overnight without actively clicking the browser tab:
+
+### Browser Keep-Alive Tip
+To prevent Google Colab from disconnecting due to tab inactivity:
+1. Press `F12` (or `Ctrl+Shift+I`) in your browser to open Developer Tools.
+2. Click on the **Console** tab.
+3. Paste the following script and press Enter:
+   ```javascript
+   function ClickConnect(){
+       console.log("Colab Keep-Alive ping");
+       var colabButton = document.querySelector("colab-connect-button");
+       if (colabButton) colabButton.click();
+   }
+   setInterval(ClickConnect, 60000);
    ```
+4. Leave the browser tab open.
+
+### Automatic Resuming (If Colab Still Disconnects)
+Because `--auto-resume` is active:
+- Checkpoints are saved atomically every 50 episodes to `/content/drive/MyDrive/RepoGuard/checkpoints/dqn/`.
+- If Colab drops connection, simply re-open the notebook, run Cells 1–4, and run the training cell again.
+- It will automatically detect `dqn_checkpoint_ep*.pt` in Google Drive, restore the exact weights, $\epsilon$-schedule, and optimizer state, and continue from the interrupted episode.
 
 ---
 
-## 5. Step 4: Step-by-Step Notebook Execution
+## 6. The 14-Stage Notebook Execution Order
 
-The notebook [`notebooks/01_train_colab.ipynb`](../notebooks/01_train_colab.ipynb) is organized into 11 distinct sections. Run them cell-by-cell:
+The notebook [`notebooks/01_train_colab.ipynb`](../notebooks/01_train_colab.ipynb) is organized into 14 distinct steps:
 
-### Cell 1–2: Mount Google Drive
-Mounts Google Drive to `/content/drive` and automatically initializes the required folder structure:
-- `/content/drive/MyDrive/RepoGuard/checkpoints/dqn/`
-- `/content/drive/MyDrive/RepoGuard/checkpoints/reinforce/`
-- `/content/drive/MyDrive/RepoGuard/reports/`
-
-### Cell 3–4: Clone Repository & Install Dependencies
-Clones your GitHub repository into `/content/Repo-Guard` and runs:
-```bash
-pip install -q -r requirements.txt
-pip install -q -e .
-```
-
-### Cell 5: One-Command Repository Fetching & Indexing
-Clones all 5 benchmark repositories (`schedule`, `python-dotenv`, `cachetools`, `python-tabulate`, `requests`) at their pinned snapshot commits and generates dense semantic vector indexes (`sentence-transformers/all-MiniLM-L6-v2`) in ~60 seconds:
-```bash
-python scripts/fetch_repos.py --index
-```
-
-### Cell 6: Smoke-Test Unit Verification
-Verifies the RL environment, action executor, Q-network, REINFORCE agent, and serving interface:
-```bash
-pytest tests/unit/test_environment.py tests/unit/test_dqn.py tests/unit/test_reinforce.py tests/unit/test_policy_serving.py -v
-```
-
-### Cell 7: Train Deep Q-Network (DQN) Policy
-Trains the primary DQN policy over **2,000 episodes** with:
-- Dynamic risk sampling $\lambda \sim \text{LogUniform}(0.25, 5.0)$
-- Epsilon-greedy schedule ($\epsilon: 1.0 \to 0.05$)
-- Experience replay buffer capacity: 20,000 transitions
-- Smooth L1 (Huber) loss and target network sync every 10 episodes
-- Atomic checkpointing to Google Drive every 50 episodes:
-```bash
-python scripts/train_agent.py \
-    --algo dqn \
-    --episodes 2000 \
-    --device cuda \
-    --learning-rate 0.0005 \
-    --batch-size 32 \
-    --checkpoint-dir /content/drive/MyDrive/RepoGuard/checkpoints/dqn \
-    --log-interval 50
-```
-
-### Cell 8: Train REINFORCE Agent (Ablation Baseline)
-Trains the REINFORCE baseline over **1,500 episodes** with masked action probabilities and running-mean baseline subtraction:
-```bash
-python scripts/train_agent.py \
-    --algo reinforce \
-    --episodes 1500 \
-    --device cuda \
-    --learning-rate 0.0005 \
-    --checkpoint-dir /content/drive/MyDrive/RepoGuard/checkpoints/reinforce \
-    --log-interval 50
-```
-
-### Cell 9: Comprehensive Policy Evaluation
-Evaluates both policies across 6 risk tolerance levels ($\lambda \in \{0.25, 0.5, 1.0, 2.0, 3.0, 5.0\}$):
-```bash
-python scripts/evaluate_rl.py \
-    --policy /content/drive/MyDrive/RepoGuard/checkpoints/dqn/dqn_policy_latest.pt \
-    --split all \
-    --output-csv /content/drive/MyDrive/RepoGuard/reports/eval_dqn.csv
-
-python scripts/evaluate_rl.py \
-    --policy /content/drive/MyDrive/RepoGuard/checkpoints/reinforce/reinforce_policy_latest.pt \
-    --split all \
-    --output-csv /content/drive/MyDrive/RepoGuard/reports/eval_reinforce.csv
-```
-
-### Cell 10: Comparative Visualization & Risk Curves
-Generates high-resolution comparative figures showing:
-1. **Coverage vs. $\lambda$:** How selective the agent becomes as risk penalty increases.
-2. **Hallucination Rate vs. $\lambda$:** Demonstrating monotonic reduction in unsupported claims.
-3. **Trap Abstention vs. $\lambda$:** Demonstrating proactive abstention on unanswerable questions.
-Saves figure to `/content/drive/MyDrive/RepoGuard/reports/risk_curves_comparison.png`.
+| Step | Section Name | What It Does |
+|---|---|---|
+| **1** | GPU Verification | Runs `nvidia-smi`, reports GPU model and total VRAM. |
+| **2** | Google Drive Setup | Mounts `/content/drive` and initializes persistent directories for checkpoints, indexes, and cache. |
+| **3** | Repository Setup | Clones or updates `https://github.com/Shreyank86/Repo-Guard.git` and verifies latest commit hash. |
+| **4** | Dependency Installation | Installs `requirements.txt`, `bitsandbytes`, and `repoguard` in editable mode. |
+| **5** | Persistent Indexes | Checks Drive for indexes; symlinks them to `/content/` if found, or builds and backs them up to Drive if missing. |
+| **6** | Unit Tests Smoke Check | Runs pytest on the 5 agent unit test suites. |
+| **7** | Pre-Training Validation Gate | Enforces 6 strict assertion checks on repos, commits, schemas, splits, state vectors, and cache before launching training. |
+| **8** | Transitions & Cache Inspection | Inspects `episode_log.jsonl` (240 transitions) and reports SQLite cache entries. |
+| **9** | DQN Training (Auto-Resume) | Trains DQN for 2,000 episodes on CUDA GPU with periodic atomic checkpointing to Google Drive every 50 episodes. |
+| **10** | REINFORCE Baseline | Trains REINFORCE for 1,500 episodes with baseline subtraction and atomic checkpointing. |
+| **11** | Validation Split Evaluation | Evaluates both models on the `validation` split (12 cases) across $\lambda \in [0.25, 5.0]$ $\to$ `val_dqn.csv`, `val_reinforce.csv`. |
+| **12** | Held-Out Test Evaluation | Evaluates both models on the unpolluted `test` split (12 cases) across $\lambda \in [0.25, 5.0]$ $\to$ `test_dqn.csv`, `test_reinforce.csv`. |
+| **13** | Comparative Risk Curves | Plots Coverage vs. $\lambda$, Hallucination Rate vs. $\lambda$, and Trap Abstention vs. $\lambda$ $\to$ `test_risk_curves.png`. |
+| **14** | Experiment Manifest | Records git commit, GPU name, seeds, and artifact paths into `experiment_manifest.json`. |
 
 ---
 
-## 6. Checkpoint Structure in Google Drive
+## 7. Artifacts Saved in Google Drive
 
-At the end of training, your Google Drive will contain:
+At the end of training and evaluation, your Google Drive folder (`/MyDrive/RepoGuard/`) will contain:
 
 ```
 MyDrive/
 └── RepoGuard/
+    ├── data/
+    │   ├── indexes/                      <- Reusable dense vector indexes
+    │   └── cache/
+    │       └── operations.db             <- Reusable SQLite cache (SEARCH, INSPECT, VERIFY, LLM)
     ├── checkpoints/
     │   ├── dqn/
-    │   │   ├── dqn_policy_latest.pt             <- Deployable PyTorch weights
-    │   │   ├── dqn_checkpoint_episode_500.pt    <- Midpoint checkpoint
-    │   │   ├── dqn_checkpoint_episode_1000.pt
-    │   │   ├── dqn_checkpoint_episode_1500.pt
-    │   │   ├── dqn_checkpoint_episode_2000.pt
-    │   │   └── training_metrics.json            <- Loss and reward history
-    │   │
+    │   │   ├── dqn_policy_latest.pt      <- Best deployable PyTorch weights
+    │   │   ├── dqn_checkpoint_ep500.pt   <- Intermediate checkpoint
+    │   │   ├── dqn_checkpoint_ep1000.pt
+    │   │   ├── dqn_checkpoint_ep1500.pt
+    │   │   ├── dqn_checkpoint_ep2000.pt
+    │   │   └── dqn_training_history.json <- Episode rewards and losses
     │   └── reinforce/
-    │       ├── reinforce_policy_latest.pt       <- Deployable PyTorch weights
-    │       ├── reinforce_checkpoint_episode_500.pt
-    │       ├── reinforce_checkpoint_episode_1000.pt
-    │       ├── reinforce_checkpoint_episode_1500.pt
-    │       └── training_metrics.json
-    │
+    │       ├── reinforce_policy_latest.pt
+    │       └── reinforce_training_history.json
     └── reports/
-        ├── eval_dqn.csv                         <- Full evaluation table
-        ├── eval_reinforce.csv                   <- Full evaluation table
-        └── risk_curves_comparison.png           <- Publication-ready figure
+        ├── val_dqn.csv                   <- Validation split evaluation
+        ├── val_reinforce.csv
+        ├── test_dqn.csv                  <- Held-out test evaluation
+        ├── test_reinforce.csv
+        ├── test_risk_curves.png          <- Publication-ready figure
+        └── experiment_manifest.json      <- Full reproducibility record
 ```
 
 ---
 
-## 7. Using Trained Policy in Phase 3 Serving
+## 8. Phase 3 API Serving Integration
 
-Once downloaded or synced from Google Drive, loading the trained policy in Python or FastAPI requires just 3 lines of code:
+To serve the trained policy in Phase 3 FastAPI:
 
 ```python
 from repoguard.agent import RepoGuardPolicy, StateVector, RLAction
 
-# 1. Load weights
+# Load weights from Google Drive checkpoint
 policy = RepoGuardPolicy("data/checkpoints/dqn/dqn_policy_latest.pt", device="cpu")
 
-# 2. Select optimal action given observation vector
+# Select action given 18-dim observation vector
 action: RLAction = policy.select_action(state_vector, valid_mask=[True, True, True, True, True, True])
-print(f"Selected action: {action.name}")
-
-# 3. Inspect policy distribution
-action_probs = policy.get_action_probabilities(state_vector)
-for act, prob in action_probs.items():
-    print(f"  {act.name}: {prob:.3f}")
+print(f"Optimal Action: {action.name}")
 ```
-
----
-
-## 8. Troubleshooting & FAQ
-
-### Q1: What happens if Google Colab disconnects during training?
-> Because the training loop periodically saves checkpoints (e.g. `dqn_checkpoint_episode_500.pt`) directly to Google Drive, no progress is lost. If your session drops, simply reconnect, re-mount Drive, and run `train_agent.py`.
-
-### Q2: Can I run with live LLM (`Qwen2.5-Coder`) instead of `MockLLM`?
-> Yes! In Colab, install `bitsandbytes` (`!pip install bitsandbytes`) and pass `--no-mock` to `train_agent.py` and `evaluate_rl.py`. You can also configure your Hugging Face token in Colab Secrets (`userdata.get('HF_TOKEN')`).
-
-### Q3: How long does 2,000 episodes take to train on Colab GPU?
-> With operation caching and MockLLM, 2,000 episodes on a Tesla T4 GPU takes approximately **4 to 6 minutes**. With live 4-bit quantized LLM inference, it takes approximately **35 to 50 minutes**.
