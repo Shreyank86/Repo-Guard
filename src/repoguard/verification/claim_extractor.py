@@ -105,11 +105,13 @@ def extract_claims(text: str) -> list[Claim]:
     positioned = []
     for definition in _DEFINITIONS:
         for match in definition.finditer(prose):
-            kind = (
-                ClaimType.CLASS_EXISTS
-                if match["role"].lower() == "class"
-                else ClaimType.FUNCTION_EXISTS
-            )
+            role = match["role"].lower().split()
+            if "or" in role:
+                kind = ClaimType.SYMBOL_EXISTS
+            elif role[-1] == "class":
+                kind = ClaimType.CLASS_EXISTS
+            else:
+                kind = ClaimType.FUNCTION_EXISTS
             positioned.append((match.start(), _claim_from_match(kind, match)))
     for kind, pattern in _PATTERNS:
         positioned.extend(

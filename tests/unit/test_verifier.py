@@ -3,8 +3,16 @@ from pathlib import Path
 
 import pytest
 
+from repoguard.repository import load_index
 from repoguard.schemas import IndexArtifacts
-from repoguard.verification import Claim, VerdictStatus, extract_claims, verify
+from repoguard.verification import (
+    Claim,
+    ClaimVerdict,
+    ReasonCode,
+    VerdictStatus,
+    extract_claims,
+    verify,
+)
 
 
 @pytest.fixture
@@ -27,6 +35,7 @@ def test_rejects_baseline_job_claim_in_unindexed_file(mock_index: IndexArtifacts
     assert claims == [Claim(symbol="Job", file="job.py")]
     assert result.verdict == "unsupported"
     assert result.claims[0].status == VerdictStatus.UNVERIFIABLE
+    assert result.claims[0].reason_code == ReasonCode.FILE_UNINDEXED
     assert result.claims[0].evidence == []
     assert result.unsupported_names == ["job.py"]
 
@@ -36,6 +45,7 @@ def test_verifies_job_in_its_defining_file(mock_index: IndexArtifacts) -> None:
 
     assert result.verdict == "verified"
     assert result.claims[0].status == VerdictStatus.VERIFIED
+    assert result.claims[0].reason_code == ReasonCode.DEFINITION_FOUND
     assert result.claims[0].evidence[0].file == "schedule/__init__.py"
     assert result.claims[0].evidence[0].line == 209
     assert result.unsupported_names == []
@@ -161,6 +171,7 @@ def test_malformed_claims_do_not_block_valid_claims(
     assert result.verdict == "partially_verified"
     assert result.claims[0].claim is None
     assert result.claims[0].status == VerdictStatus.UNVERIFIABLE
+    assert result.claims[0].reason_code == ReasonCode.INVALID_CLAIM
     assert result.claims[1].status == VerdictStatus.VERIFIED
 
 
@@ -169,7 +180,81 @@ def test_empty_and_failed_indexes_never_verify_an_unavailable_definition(
 ) -> None:
     question = Claim(symbol="Job", file="schedule/__init__.py")
     empty = mock_index.model_copy(update={"files": [], "symbols": []})
-    assert verify([question], empty).claims[0].status == VerdictStatus.UNVERIFIABLE
+    empty_result = verify([question], empty).claims[0]
+    assert empty_result.status == VerdictStatus.UNVERIFIABLE
+    assert empty_result.reason_code == ReasonCode.FILE_UNINDEXED
 
     mock_index.files[0].parse_status = "error"
-    assert verify([question], mock_index).claims[0].status == VerdictStatus.UNVERIFIABLE
+    parse_error = verify([question], mock_index).claims[0]
+    assert parse_error.status == VerdictStatus.UNVERIFIABLE
+    assert parse_error.reason_code == ReasonCode.FILE_PARSE_ERROR
+
+
+def test_semantic_claim_does_not_share_a_contradiction_code(mock_index: IndexArtifacts) -> None:
+    result = verify(
+        [
+            {"type": "semantic", "statement": "Job.run never fails."},
+            {"type": "parameter_exists", "symbol": "Job.do", "parameter": "timeout"},
+            {"type": "calls", "caller": "Scheduler._run_job", "callee": "Job.run"},
+        ],
+        mock_index,
+    )
+
+    assert [(item.status, item.reason_code) for item in result.claims] == [
+        (VerdictStatus.UNVERIFIABLE, ReasonCode.SEMANTIC_CLAIM),
+        (VerdictStatus.REFUTED, ReasonCode.PARAMETER_ABSENT),
+        (VerdictStatus.UNVERIFIABLE, ReasonCode.UNRESOLVED_CALL),
+    ]
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "../schedule/__init__.py",
+        "schedule/../setup.py",
+        "C:/tmp/setup.py",
+        "C:setup.py",
+        "/schedule/__init__.py",
+        r"schedule\__init__.py",
+    ],
+)
+def test_verifier_reports_invalid_index_paths(mock_index: IndexArtifacts, path: str) -> None:
+    item = verify([{"type": "file_exists", "file": path}], mock_index).claims[0]
+
+    assert item.status == VerdictStatus.UNVERIFIABLE
+    assert item.reason_code == ReasonCode.INVALID_PATH
+
+
+def test_phase1_verdict_can_still_be_loaded() -> None:
+    result = ClaimVerdict.model_validate(
+        {"claim": None, "status": "unverifiable", "reason": "Legacy verdict", "evidence": []}
+    )
+
+    assert result.status == VerdictStatus.UNVERIFIABLE
+    assert result.reason_code is None
+
+
+def test_compound_definition_claim_can_match_a_class(mock_index: IndexArtifacts) -> None:
+    claims = extract_claims("The function or class `Job` is defined in `schedule/__init__.py`.")
+    result = verify(claims, mock_index)
+
+    assert result.verdict == "verified"
+    assert result.claims[0].reason_code == ReasonCode.DEFINITION_FOUND
+
+
+def test_verifier_uses_merged_phase2_index_fixture() -> None:
+    fixture = Path(__file__).resolve().parents[1] / "fixtures" / "indexes" / "indexer_repo"
+    result = verify(
+        [
+            {
+                "type": "calls",
+                "caller": "pkg.app.App.initialize_app",
+                "callee": "pkg.config.load_config",
+            }
+        ],
+        load_index(fixture),
+    )
+
+    assert result.verdict == "verified"
+    assert result.claims[0].reason_code == ReasonCode.CALL_RESOLVED
+    assert result.claims[0].evidence[0].file == "pkg/app.py"

@@ -363,6 +363,9 @@ python scripts/evaluate_baseline.py
 # Outputs: reports/baseline_results.csv
 ```
 
+For the versioned Phase 2 benchmark, retrieval ablation, and paired baseline
+commands, see the [Phase 2 evaluation handoff](reports/phase2_member2_evaluation.md).
+
 ### Run the Backend API
 
 ```bash
